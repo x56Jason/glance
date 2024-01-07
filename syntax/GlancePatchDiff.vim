@@ -8,7 +8,7 @@ syn match GlancePatchDiffDelete /.*/ contained
 hi def GlancePatchDiffAdd guibg=#000000 guifg=#859900
 hi def GlancePatchDiffDelete guibg=#000000 guifg=#dc322f
 hi def GlancePatchDiffHunkHeader guifg=#cccccc guibg=#404040
-hi def GlancePatchDiffFilePath guifg=#798bf2
+"hi def GlancePatchDiffFilePath guifg=#798bf2
 
 hi def GlancePatchDiffViewHeader guifg=#ffffff guibg=#94bbd1
 
@@ -21,4 +21,3 @@ sign define GlancePatchDiffAdd linehl=GlancePatchDiffAdd
 sign define GlancePatchDiffDelete linehl=GlancePatchDiffDelete
 
 sign define GlancePatchDiffViewHeader linehl=GlancePatchDiffViewHeader
-sign define GlancePatchDiffViewDescription linehl=GlancePatchDiffHunkHeader

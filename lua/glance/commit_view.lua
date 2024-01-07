@@ -351,7 +351,9 @@ local highlight_maps = {
 		hunkheader = "GlanceCommitHunkHeader",
 		filepath = "GlanceCommitFilePath",
 		viewheader = "GlanceCommitViewHeader",
-		viewdesc = "GlanceCommitViewDescription",
+		commitdesc = "GlanceCommitDesc",
+		headerfield = "GlanceCommitHeaderField",
+		summary = "GlanceCommitSummary",
 	},
 	PatchDiff = {
 		diffadd = "GlancePatchDiffAdd",
@@ -359,7 +361,6 @@ local highlight_maps = {
 		hunkheader = "GlancePatchDiffHunkHeader",
 		filepath = "GlancePatchDiffFilePath",
 		viewheader = "GlancePatchDiffViewHeader",
-		viewdesc = "GlancePatchDiffViewDescription",
 	},
 }
 
@@ -400,16 +401,21 @@ function M:initialize()
 		add_sign(hl_map.viewheader) -- 'GlanceCommitViewHeader'
 		output:append("<remote>/<branch> " .. info.oid)
 		output:append("Author:     " .. info.author_name .. " <" .. info.author_email .. ">")
+		add_sign(hl_map.headerfield)
 		output:append("AuthorDate: " .. info.author_date)
+		add_sign(hl_map.headerfield)
 		output:append("Commit:     " .. info.committer_name .. " <" .. info.committer_email .. ">")
+		add_sign(hl_map.headerfield)
 		output:append("CommitDate: " .. info.committer_date)
+		add_sign(hl_map.headerfield)
 		output:append("")
 		for _, line in ipairs(info.description) do
 			output:append(line)
-			add_sign(hl_map.viewdesc) -- 'GReviewCommitViewDescription'
+			add_sign(hl_map.commitdesc) -- 'GlanceCommitDesc'
 		end
 		output:append("")
 		output:append(overview.summary)
+		add_sign(hl_map.summary)
 		for _, file in ipairs(overview.files) do
 			local insertions = file.insertions or ""
 			local deletions = file.deletions or ""
@@ -420,16 +426,16 @@ function M:initialize()
 			)
 			local from = 0
 			local to = #file.path
-			add_highlight(from, to, hl_map.filepath) -- "GReviewFilePath"
+			add_highlight(from, to, hl_map.filepath) -- "GlanceFilePath"
 			from = to + 3
 			to = from + #tostring(changes)
 			add_highlight(from, to, "Number")
 			from = to + 1
 			to = from + #insertions
-			add_highlight(from, to, hl_map.diffadd) -- "GReviewDiffAdd"
+			add_highlight(from, to, hl_map.diffadd) -- "GlanceDiffAdd"
 			from = to
 			to = from + #deletions
-			add_highlight(from, to, hl_map.diffdel) -- "GReviewDiffDelete"
+			add_highlight(from, to, hl_map.diffdel) -- "GlanceDiffDelete"
 		end
 		output:append("")
 	end
@@ -443,7 +449,7 @@ function M:initialize()
 		end
 		for _, hunk in ipairs(diff.hunks) do
 			output:append(diff.lines[hunk.diff_from])
-			add_sign(hl_map.hunkheader) -- 'GReviewHunkHeader'
+			add_sign(hl_map.hunkheader) -- 'GlanceHunkHeader'
 			for i=hunk.diff_from + 1, hunk.diff_to do
 				local l = diff.lines[i]
 				local from = 0
