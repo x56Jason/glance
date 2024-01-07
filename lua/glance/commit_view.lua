@@ -439,7 +439,7 @@ function M:initialize()
 			output:append(header)
 		end
 		if self.first_hunk_line == nil then
-			self.first_hunk_line = #output
+			self.first_hunk_line = #output + 1
 		end
 		for _, hunk in ipairs(diff.hunks) do
 			output:append(diff.lines[hunk.diff_from])
