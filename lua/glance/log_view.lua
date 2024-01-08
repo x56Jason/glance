@@ -1,3 +1,4 @@
+local glance = require("glance")
 local Buffer = require("glance.buffer")
 local CommitView = require("glance.commit_view")
 local LineBuffer = require('glance.line_buffer')
@@ -101,9 +102,17 @@ function M:open_patchdiff_view(commit)
 	view:initialize()
 end
 
+function M:close()
+	if self.buffer == nil or glance.config.q_quit_log == "off" then
+		return
+	end
+	self.buffer:close()
+	self.buffer = nil
+end
+
 function M:create_buffer()
 	local commits = self.commits
-	local buffer = Buffer.create({
+	local config = {
 		name = "GlanceLog",
 		filetype = "GlanceLog",
 		bufhidden = "hide",
@@ -123,10 +132,18 @@ function M:create_buffer()
 					local line = vim.fn.line '.'
 					local commit = commits[line].hash
 					self:open_patchdiff_view(commit)
+				end,
+				["q"] = function()
+					self:close()
 				end
 			}
 		},
-	})
+	}
+
+	local buffer = Buffer.create(config)
+	if buffer == nil then
+		return
+	end
 	vim.cmd("wincmd o")
 
 	self.buffer = buffer
