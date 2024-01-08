@@ -28,11 +28,10 @@ local function parse_log(output)
 	return commits
 end
 
-function M.new(user_opts)
-	local opts = user_opts.args or ""
+function M.new(cmdline)
 	local commit_limit = "-256"
-	if opts ~= "" then
-		commit_limit = opts
+	if cmdline ~= "" then
+		commit_limit = cmdline
 	end
 	local cmd = "git log --oneline --no-abbrev-commit --decorate " .. commit_limit
 	local raw_output = vim.fn.systemlist(cmd)
