@@ -1,5 +1,4 @@
-
-local M = { }
+local M = {}
 
 local default_config = {
 	patchdiff_mode = "diffonly",
