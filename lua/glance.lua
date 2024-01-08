@@ -1,4 +1,3 @@
-local LogView = require("glance.log_view")
 
 local M = { }
 
@@ -7,7 +6,7 @@ local default_config = {
 }
 
 local function open_logview(user_opts)
-	local logview = LogView.new(user_opts)
+	local logview = require("glance.log_view").new(user_opts)
 	logview:open()
 end
 
