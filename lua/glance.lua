@@ -1,6 +1,6 @@
 local M = {}
 
-local default_config = {
+M.config = {
 	patchdiff_mode = "diffonly",
 }
 
@@ -24,7 +24,6 @@ end
 function M.setup(opts)
 	local config = opts or {}
 
-	M.config = default_config
 	M.set_config(config)
 
 	vim.api.nvim_create_user_command( "Glance", open_logview, { desc = "Open Git Log View", nargs = '*' })
