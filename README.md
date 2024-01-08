@@ -25,24 +25,34 @@ glance.setup{}
 
 ## Usage
 
-### 'Glance' Command
+### 'Glance log' Command
 
-Open Glance log view by the 'Glance' command:
+Open Glance log view by the 'Glance log' command:
 
 ```vim
-:Glance
+:Glance log
 ```
 
-### 'Patchdiff' Command
+### 'Glance patchdiff' Command
 
-You can also use 'Patchdiff' command to set the display mode for the diff between upstream and backport commit.
+You can also use 'patchdiff' sub-command to set the display mode for the diff between upstream and backport commit.
 
 If the mode is "diffonly", the diff of commit message will not show.
 
 By default the display mode is "diffonly".
 
 ```vim
-:Patchdiff [full|diffonly]
+:Glance patchdiff [full|diffonly]
+```
+
+### 'Glance q_quit_log' Command
+
+You can also use 'q_quit_log' sub-command to enable pressing 'q' to quit log view when in it.
+
+By default, it is off
+
+```vim
+:Glance q_quit_log [on|off]
 ```
 
 ### Keymaps
@@ -54,5 +64,5 @@ In Glance log view, on each commit, following keymaps are available:
 | <enter> | show the current commit                                   |
 |    p    | show the diff between upstream commit and backport commit |
 |    l    | show side by side the upstream commit and backport commit |
-|    q    | quit the 'p' or 'l' or '<enter>' window                   |
+|    q    | close the corresponding window                            |
 
