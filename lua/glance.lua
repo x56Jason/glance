@@ -1,7 +1,7 @@
 local M = {}
 
 M.config = {
-	patchdiff_mode = "diffonly",
+	patchdiff = "diffonly",
 	q_quit_log = "off",
 }
 
@@ -11,8 +11,8 @@ local function do_glance_log(cmdline)
 end
 
 function M.set_config(config)
-	if config.patchdiff_mode == "full" or config.patchdiff_mode == "diffonly" then
-		M.config.patchdiff_mode = config.patchdiff_mode
+	if config.patchdiff == "full" or config.patchdiff == "diffonly" then
+		M.config.patchdiff = config.patchdiff
 	end
 	if config.q_quit_log == "on" or config.q_quit_log == "off" then
 		M.config.q_quit_log = config.q_quit_log
@@ -20,7 +20,7 @@ function M.set_config(config)
 end
 
 local function do_glance_patchdiff(cmdline)
-	local config = { patchdiff_mode = string.gsub(cmdline, "%s*(.-)%s*", "%1") }
+	local config = { patchdiff = string.gsub(cmdline, "%s*(.-)%s*", "%1") }
 	M.set_config(config)
 end
 

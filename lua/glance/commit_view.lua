@@ -284,7 +284,7 @@ function M.new_patchdiff(commit_id)
 
 	local config = require("glance").config
 	local cmd_compose_func = patchdiff_full_compose
-	if config.patchdiff_mode == "diffonly" then
+	if config.patchdiff == "diffonly" then
 		cmd_compose_func = patchdiff_diffonly_compose
 	end
 
