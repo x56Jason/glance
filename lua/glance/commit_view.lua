@@ -358,6 +358,8 @@ local highlight_maps = {
 	PatchDiff = {
 		diffadd = "GlancePatchDiffAdd",
 		diffdel = "GlancePatchDiffDelete",
+		diffaddhl = "PRDiffAdd",
+		diffdelhl = "PRDiffDel",
 		hunkheader = "GlancePatchDiffHunkHeader",
 		filepath = "GlancePatchDiffFilePath",
 		viewheader = "GlancePatchDiffViewHeader",
@@ -452,8 +454,6 @@ function M:initialize()
 			add_sign(hl_map.hunkheader) -- 'GlanceHunkHeader'
 			for i=hunk.diff_from + 1, hunk.diff_to do
 				local l = diff.lines[i]
-				local from = 0
-				local to = #l
 				output:append(l)
 				if diff_add_matcher:match_str(l) then
 					if vim.bo.filetype ~= "GlancePatchDiff" or
@@ -464,9 +464,9 @@ function M:initialize()
 						vim.startswith(l, "++++ ") or
 						vim.startswith(l, "+--- ")
 					then
-						add_highlight(from, to, hl_map.diffadd)
+						add_sign(hl_map.diffadd)
 					else
-						add_highlight(from, to, "PRDiffAdd")
+						add_sign(hl_map.diffaddhl)
 					end
 				elseif diff_delete_matcher:match_str(l) then
 					if vim.bo.filetype ~= "GlancePatchDiff" or
@@ -477,9 +477,9 @@ function M:initialize()
 						vim.startswith(l, "-+++ ") or
 						vim.startswith(l, "---- ")
 					then
-						add_highlight(from, to, hl_map.diffdel)
+						add_sign(hl_map.diffdel)
 					else
-						add_highlight(from, to, "PRDiffDel")
+						add_sign(hl_map.diffdelhl)
 					end
 				end
 			end

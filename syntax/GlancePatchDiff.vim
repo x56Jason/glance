@@ -12,8 +12,9 @@ hi def GlancePatchDiffHunkHeader guifg=#cccccc guibg=#404040
 
 hi def GlancePatchDiffViewHeader guifg=#ffffff guibg=#94bbd1
 
-hi def PRDiffAdd guifg=#ffffff guibg=#008000
-hi def PRDiffDel guifg=#ffffff guibg=#ff0000
+"hi def PRDiffAdd guifg=#ffffff guibg=#008000
+hi def PRDiffAdd guifg=#000000 guibg=#859900
+hi def PRDiffDel guifg=#ffffff guibg=#dc322f
 
 sign define GlancePatchDiffHunkHeader linehl=GlancePatchDiffHunkHeader
 
@@ -21,3 +22,6 @@ sign define GlancePatchDiffAdd linehl=GlancePatchDiffAdd
 sign define GlancePatchDiffDelete linehl=GlancePatchDiffDelete
 
 sign define GlancePatchDiffViewHeader linehl=GlancePatchDiffViewHeader
+
+sign define PRDiffAdd linehl=PRDiffAdd
+sign define PRDiffDel linehl=PRDiffDel
