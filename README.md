@@ -32,6 +32,13 @@ Open Glance log view by the 'Glance log' command:
 ```vim
 :Glance log
 ```
+This will read as much as 256 commits from the repo.
+
+If you want to customize the commits that will be read-in, you can append any git-log arguments to 'Glance log', such as:
+
+```vim
+:Glance log v6.6..HEAD
+```
 
 ### 'Glance patchdiff' Command
 
