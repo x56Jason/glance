@@ -71,6 +71,15 @@ function M:open_parallel_views(commit)
 		vim.notify("Bad commit: " .. upstream_commit_id, vim.log.levels.ERROR, {})
 		return
 	end
+	local view_right = CommitView.new(commit)
+	if (view_right == nil) then
+		vim.notify("Bad commit: " .. commit, vim.log.levels.ERROR, {})
+		view_left:close()
+		return
+	end
+
+	CommitView.sort_diffs_file(view_left, view_right)
+
 	view_left:open({name = "Upstream: " .. upstream_commit_id})
 	view_left:initialize()
 	vim.cmd("wincmd o")
@@ -78,12 +87,6 @@ function M:open_parallel_views(commit)
 	vim.cmd.normal("zz")
 	vim.cmd("set scrollbind")
 
-	local view_right = CommitView.new(commit)
-	if (view_right == nil) then
-		vim.notify("Bad commit: " .. commit, vim.log.levels.ERROR, {})
-		view_left:close()
-		return
-	end
 	view_right:open({name = "Backport: " .. commit})
 	view_right:initialize()
 	vim.cmd("wincmd L")

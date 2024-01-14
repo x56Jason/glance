@@ -179,7 +179,9 @@ local function parse_commit_info(raw_info, diffonly)
 		table.insert(raw_diff_info, line)
 		line = advance()
 		if line == nil or vim.startswith(line, "diff") then
-			table.insert(info.diffs, parse_diff(raw_diff_info))
+			local diff = parse_diff(raw_diff_info)
+			table.insert(info.diffs, diff)
+			info.diffs[diff.file] = diff
 			raw_diff_info = {}
 		end
 	end
@@ -210,6 +212,39 @@ end
 
 function M:set_scrollbind_view(view)
 	self.view_scrollbind = view
+end
+
+function M.sort_diffs_file(view1, view2)
+	local diffs1 = view1.commit_info.diffs
+	local diffs2 = view2.commit_info.diffs
+	local both_diffs = {}
+	local single_diffs = {}
+
+	for _, diff in ipairs(diffs1) do
+		if diffs2[diff.file] then
+			table.insert(both_diffs, diff)
+		else
+			table.insert(single_diffs, diff)
+		end
+	end
+	for _, diff in ipairs(single_diffs) do
+		table.insert(both_diffs, diff)
+	end
+	view1.commit_info.diffs = both_diffs
+
+	both_diffs = {}
+	single_diffs = {}
+	for _, diff in ipairs(diffs2) do
+		if diffs1[diff.file] then
+			table.insert(both_diffs, diff)
+		else
+			table.insert(single_diffs, diff)
+		end
+	end
+	for _, diff in ipairs(single_diffs) do
+		table.insert(both_diffs, diff)
+	end
+	view2.commit_info.diffs = both_diffs
 end
 
 -- @class CommitViewBuffer
