@@ -266,14 +266,15 @@ function M:open_buffer()
 		add_sign("GlanceLogHeaderField")
 		output:append("Updated:  " .. self.head.updated_at)
 		add_sign("GlanceLogHeaderField")
-		output:append("State:    " .. self.head.state)
-		add_sign("GlanceLogHeaderField")
 		if self.head.mergeable then
 			output:append("Mergable: true")
 		else
 			output:append("Mergable: false")
 		end
 		add_sign("GlanceLogHeaderField")
+		output:append("State:    " .. self.head.state)
+		add_sign("GlanceLogHeaderField")
+		output:append("Title:    " .. self.head.title)
 		output:append("---")
 
 		for _, line in pairs(self.body) do

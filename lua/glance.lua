@@ -116,6 +116,7 @@ function M.do_glance_pr(cmdline)
 			created_at = json.created_at,
 			updated_at = json.updated_at,
 			mergeable = json.mergeable,
+			title = json.title,
 		},
 		desc_body = desc_body,
 		user = json.head.user.login,
