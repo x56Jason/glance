@@ -231,6 +231,7 @@ function M:open_buffer()
 			["ci_successful"] = "GlanceLogCISuccess",
 			["sig/Kernel"] = "GlanceLogSigKernel",
 			["stat/needs-squash"] = "GlanceLogNeedSquash",
+			["newcomer"] = "GlanceLogNewComer",
 		}
 		local head = "Pull-Request !" .. self.pr_number .. "        "
 		local hls = {}

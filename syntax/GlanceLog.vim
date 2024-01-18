@@ -18,6 +18,7 @@ hi def GlanceLogLGTM guibg=#000000 guifg=#20c22e
 hi def GlanceLogCISuccess guibg=#000000 guifg=#20c22e
 hi def GlanceLogSigKernel guibg=#000000 guifg=#1dcaf9
 hi def GlanceLogNeedSquash guibg=#000000 guifg=#febc08
+hi def GlanceLogNewComer guibg=#000000 guifg=#1083d6
 hi def GlanceLogCommentHead guibg=#000000 guifg=#94bbd1
 
 sign define GlanceLogHeader linehl=GlanceLogHeader
