@@ -146,7 +146,10 @@ local function table_concat(t1,t2)
 end
 
 local function do_glance_prlist(cmdline)
-	local howmany = cmdline ~= "" or 100
+	local howmany = "100"
+	if cmdline ~= "" then
+		howmany = cmdline
+	end
 	local base_url = "https://gitee.com/api/v5/repos/" .. M.config.gitee.repo .. "/pulls"
 	local token = M.config.gitee.token
 	local opts = {
