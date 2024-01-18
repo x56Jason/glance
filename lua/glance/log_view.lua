@@ -29,7 +29,20 @@ local function parse_log(output)
 	return commits
 end
 
-function M.new(cmdline)
+local function get_table_size(t)
+    local count = 0
+    for _, __ in pairs(t) do
+        count = count + 1
+    end
+    return count
+end
+
+function M.new(cmdline, pr)
+	local pr_number = pr.number
+	local desc_head = pr.desc_head
+	local desc_body = pr.desc_body
+
+	local q_quit_log = "off"
 	local commit_limit = "-256"
 	if cmdline ~= "" then
 		commit_limit = cmdline
@@ -37,10 +50,29 @@ function M.new(cmdline)
 	local cmd = "git log --oneline --no-abbrev-commit --decorate " .. commit_limit
 	local raw_output = vim.fn.systemlist(cmd)
 	local commits = parse_log(raw_output)
+	local commit_start_line = 1
+	if desc_body then
+		commit_start_line = commit_start_line + 2 + get_table_size(desc_head) + 1 + #desc_body + 1
+	end
+	local comment_start_line = commit_start_line + get_table_size(commits) + 1
+
+	local comments = {}
+	if pr_number then
+		q_quit_log = "on"
+		comments = glance.get_pr_comments(pr_number)
+	end
 
 	local instance = {
+		pr_number = pr_number,
+		labels = pr.labels,
+		head = desc_head,
+		body = desc_body,
 		commits = commits,
+		commit_start_line = commit_start_line,
+		comments = comments,
+		comment_start_line = comment_start_line,
 		buffer = nil,
+		q_quit_log = q_quit_log,
 	}
 
 	setmetatable(instance, { __index = M })
@@ -106,7 +138,7 @@ function M:open_patchdiff_view(commit)
 end
 
 function M:close()
-	if self.buffer == nil or glance.config.q_quit_log == "off" then
+	if self.buffer == nil or (self.q_quit_log == "off" and glance.config.q_quit_log == "off") then
 		return
 	end
 	self.buffer:close()
@@ -115,6 +147,8 @@ end
 
 function M:create_buffer()
 	local commits = self.commits
+	local commit_start_line = self.commit_start_line
+	local commit_count = get_table_size(self.commits)
 	local config = {
 		name = "GlanceLog",
 		filetype = "GlanceLog",
@@ -123,18 +157,33 @@ function M:create_buffer()
 			n = {
 				["<enter>"] = function()
 					local line = vim.fn.line '.'
-					local commit = commits[line].hash
-					self:open_commit_view(commit)
+					if line >= commit_start_line and line < commit_start_line + commit_count then
+						line = line - commit_start_line + 1
+						local commit = commits[line].hash
+						self:open_commit_view(commit)
+						return
+					end
+					vim.notify("Not a commit", vim.log.levels.WARN)
 				end,
 				["l"] = function()
 					local line = vim.fn.line '.'
-					local commit = commits[line].hash
-					self:open_parallel_views(commit)
+					if line >= commit_start_line and line < commit_start_line + commit_count then
+						line = line - commit_start_line + 1
+						local commit = commits[line].hash
+						self:open_parallel_views(commit)
+						return
+					end
+					vim.notify("Not a commit", vim.log.levels.WARN)
 				end,
 				["p"] = function()
 					local line = vim.fn.line '.'
-					local commit = commits[line].hash
-					self:open_patchdiff_view(commit)
+					if line >= commit_start_line and line < commit_start_line + commit_count then
+						line = line - commit_start_line + 1
+						local commit = commits[line].hash
+						self:open_patchdiff_view(commit)
+						return
+					end
+					vim.notify("Not a commit", vim.log.levels.WARN)
 				end,
 				["q"] = function()
 					self:close()
@@ -159,7 +208,12 @@ function M:open_buffer()
 	end
 
 	local output = LineBuffer.new()
+	local signs = {}
 	local highlights = {}
+
+	local function add_sign(name)
+		signs[#output] = name
+	end
 
 	local function add_highlight(from, to, name)
 		table.insert(highlights, {
@@ -168,6 +222,67 @@ function M:open_buffer()
 			to = to,
 			name = name
 		})
+	end
+
+	if self.body then
+		local label_hl_name = {
+			["openeuler-cla/yes"] = "GlanceLogCLAYes",
+			["lgtm"] = "GlanceLogLGTM",
+			["ci_successful"] = "GlanceLogCISuccess",
+			["sig/Kernel"] = "GlanceLogSigKernel",
+			["stat/needs-squash"] = "GlanceLogNeedSquash",
+		}
+		local head = "Pull-Request !" .. self.pr_number .. "        "
+		local hls = {}
+		local from = 0
+		local to = #head
+		table.insert(hls, {from=from, to=to, name="GlanceLogHeader"})
+		for _, label in pairs(self.labels) do
+			local label_str = label.name
+			head = head .. " | " .. label_str
+			from = to + 3
+			to = from + #label_str
+			if label_hl_name[label_str] then
+				table.insert(hls, {from=from, to=to, name=label_hl_name[label_str]})
+			end
+		end
+		output:append(head)
+		for _, hl in pairs(hls) do
+			add_highlight(hl.from, hl.to, hl.name)
+		end
+
+		output:append("---")
+
+		output:append("URL:      " .. self.head.url)
+		add_sign("GlanceLogHeaderField")
+		output:append("Creator:  " .. self.head.creator)
+		add_sign("GlanceLogHeaderField")
+		output:append("Head:     " .. self.head.head)
+		add_sign("GlanceLogHeaderHead")
+		output:append("Base:     " .. self.head.base)
+		add_sign("GlanceLogHeaderBase")
+		output:append("Created:  " .. self.head.created_at)
+		add_sign("GlanceLogHeaderField")
+		output:append("Updated:  " .. self.head.updated_at)
+		add_sign("GlanceLogHeaderField")
+		output:append("State:    " .. self.head.state)
+		add_sign("GlanceLogHeaderField")
+		if self.head.mergeable then
+			output:append("Mergable: true")
+		else
+			output:append("Mergable: false")
+		end
+		add_sign("GlanceLogHeaderField")
+		output:append("---")
+
+		for _, line in pairs(self.body) do
+			local to = string.find(line, "\r", 1)
+			if to then
+				line = string.sub(line, 1, to - 1)
+			end
+			output:append("    " .. line)
+		end
+		output:append("---")
 	end
 
 	for _, commit in pairs(self.commits) do
@@ -189,8 +304,49 @@ function M:open_buffer()
 		to = from + #commit.message
 		add_highlight(from, to, "GlanceLogSubject")
 	end
+	output:append("---")
+
+	local level = 0
+	for _, comment in pairs(self.comments) do
+		local function space_with_level(level)
+			local str = ""
+			for i = 1, level do
+				str = str .. "    "
+			end
+			return str
+		end
+		local function put_one_comment(comment, level)
+			local comment_head = string.format("%s | %s | %s", comment.user.login, comment.user.name, comment.created_at)
+			local level_space = space_with_level(level)
+			output:append(level_space .. "> " .. comment_head)
+			add_sign("GlanceLogCommentHead")
+
+			output:append("")
+			local comment_body = vim.split(comment.body, "\n")
+			for _, line in pairs(comment_body) do
+				output:append("  " .. level_space .. line)
+			end
+			output:append("")
+
+			if comment.children then
+				for _, child in pairs(comment.children) do
+					local child_level = level + 1
+					put_one_comment(child, child_level)
+				end
+			end
+		end
+
+		if not comment.in_reply_to_id then
+			put_one_comment(comment, level)
+		end
+	end
+	output:append("---")
 
 	buffer:replace_content_with(output)
+
+	for line, name in pairs(signs) do
+		buffer:place_sign(line, name, "hl")
+	end
 
 	for _, hi in ipairs(highlights) do
 		buffer:add_highlight(hi.line, hi.from, hi.to, hi.name)
