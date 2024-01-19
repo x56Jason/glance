@@ -42,7 +42,6 @@ function M.new(cmdline, pr)
 	local desc_head = pr.desc_head
 	local desc_body = pr.desc_body
 
-	local q_quit_log = "off"
 	local commit_limit = "-256"
 	if cmdline ~= "" then
 		commit_limit = cmdline
@@ -58,7 +57,6 @@ function M.new(cmdline, pr)
 
 	local comments = {}
 	if pr_number then
-		q_quit_log = "on"
 		comments = glance.get_pr_comments(pr_number)
 	end
 
@@ -72,7 +70,6 @@ function M.new(cmdline, pr)
 		comments = comments,
 		comment_start_line = comment_start_line,
 		buffer = nil,
-		q_quit_log = q_quit_log,
 	}
 
 	setmetatable(instance, { __index = M })
@@ -138,7 +135,7 @@ function M:open_patchdiff_view(commit)
 end
 
 function M:close()
-	if self.buffer == nil or (self.q_quit_log == "off" and glance.config.q_quit_log == "off") then
+	if self.buffer == nil or glance.config.q_quit_log == "off" then
 		return
 	end
 	self.buffer:close()
