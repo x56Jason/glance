@@ -64,9 +64,9 @@ local function parse_diff(output)
 	else
 		kind = header[2]:match("(.*) mode %d+")
 		if kind == "new file" then
-			file = header[5]:match("%+%+%+ b/(.*)")
+			file = header[1]:match("diff %-%-git a/%S+ b/(%S+)")
 		elseif kind == "deleted" then
-			file = header[4]:match("%-%-%- a/(.*)")
+			file = header[1]:match("diff %-%-git a/(%S+) b/%S+")
 		end
 	end
 
