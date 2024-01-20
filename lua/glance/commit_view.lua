@@ -174,7 +174,7 @@ local function parse_commit_info(raw_info, diffonly)
 	local raw_diff_info = {}
 
 	info.diffs = {}
-	line = advance()
+	local line = advance()
 	while line do
 		table.insert(raw_diff_info, line)
 		line = advance()
