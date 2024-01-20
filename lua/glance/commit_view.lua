@@ -295,14 +295,14 @@ function M:get_first_hunk_line()
 	return self.first_hunk_line
 end
 
-function patchdiff_full_compose(commit_id)
+local function patchdiff_full_compose(commit_id)
 	local commit_patch_path = "/tmp/" .. commit_id .. ".patch"
 	local commit_patch_cmd = "git show --output=" .. commit_patch_path .. " " .. commit_id
 
 	return {patch_cmd = commit_patch_cmd, patch_path = commit_patch_path}
 end
 
-function patchdiff_diffonly_compose(commit_id)
+local function patchdiff_diffonly_compose(commit_id)
 	local commit_patch_path = "/tmp/" .. commit_id .. ".patch"
 	local commit_patch_cmd = "git diff --output=" .. commit_patch_path .. " " .. commit_id .. "^.." .. commit_id
 
