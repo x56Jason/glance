@@ -339,7 +339,6 @@ function M:open_buffer()
 			put_one_comment(comment, level)
 		end
 	end
-	output:append("---")
 
 	buffer:replace_content_with(output)
 
