@@ -1,3 +1,4 @@
+local curl = require('plenary.curl')
 local glance = require("glance")
 local Buffer = require("glance.buffer")
 local CommitView = require("glance.commit_view")
@@ -38,9 +39,9 @@ local function get_table_size(t)
 end
 
 function M.new(cmdline, pr)
-	local pr_number = pr.number
-	local desc_head = pr.desc_head
-	local desc_body = pr.desc_body
+	local pr_number = pr and pr.number
+	local desc_head = pr and pr.desc_head
+	local desc_body = pr and pr.desc_body
 
 	local commit_limit = "-256"
 	if cmdline ~= "" then
@@ -61,14 +62,17 @@ function M.new(cmdline, pr)
 	end
 
 	local instance = {
+		cmdline = cmdline,
+		pr = pr,
 		pr_number = pr_number,
-		labels = pr.labels,
+		labels = pr and pr.labels,
 		head = desc_head,
 		body = desc_body,
 		commits = commits,
 		commit_start_line = commit_start_line,
 		comments = comments,
 		comment_start_line = comment_start_line,
+		text = {},
 		buffer = nil,
 	}
 
@@ -142,6 +146,142 @@ function M:close()
 	self.buffer = nil
 end
 
+function M:post_pr_comment(message)
+	local pr_number = self.pr_number
+	local token = glance.config.gitee.token
+	local opts = {
+		method = "post",
+		url = "https://gitee.com/api/v5/repos/" .. glance.config.gitee.repo .. "/pulls/" .. pr_number .. "/comments?number=" .. pr_number,
+		headers = {
+			["Accept"] = "application/json",
+			["Connection"] = "keep-alive",
+			["User-Agent"] = "Glance",
+		},
+		body = {
+			["access_token"] = token,
+			["body"] = message,
+		},
+	}
+	vim.notify("url: " .. opts.url, vim.log.levels.INFO, {})
+	local response = curl["post"](opts)
+	if response.exit ~= 0 or response.status ~= 201 then
+		vim.notify("response: " .. response.body, vim.log.levels.INFO, {})
+		return nil
+	end
+	local comment = vim.fn.json_decode(response.body)
+	vim.notify("new comment: \n" .. comment.body, vim.log.levels.INFO, {})
+	return comment
+end
+
+local function concatenate_lines(lines)
+	local message = nil
+	for _, line in ipairs(lines) do
+		if not message then 
+			message = line
+		else
+			message = message .. "\n" .. line
+		end
+	end
+	return message
+end
+
+function M:do_pr_comment(file, file_pos)
+	self.comment_file = file
+	self.comment_file_pos = file_pos
+	local config = {
+		name = "GlanceComment",
+		mappings = {
+			n = {
+				["<c-p>"] = function()
+					local lines = self.comment_buffer:get_lines(0, -1, false)
+					local message = concatenate_lines(lines)
+					local comment = self:post_pr_comment(message)
+					if comment then
+						table.insert(self.comments, comment)
+						self:append_comment(comment, 0)
+					end
+					self.comment_buffer:close()
+				end,
+			},
+		}
+	}
+	local buffer = Buffer.create(config)
+	if buffer == nil then
+		return
+	end
+
+	self.comment_buffer = buffer
+	vim.api.nvim_create_autocmd("BufDelete", {
+		buffer = 0,
+		callback = function()
+			self.comment_buffer = nil
+		end,
+	})
+end
+
+function M:append_comment(comment, level)
+	local output = self.text
+	local signs = {}
+
+	local function add_sign(name)
+		signs[#output] = name
+	end
+
+	local function space_with_level(level)
+		local str = ""
+		for i = 1, level do
+			str = str .. "    "
+		end
+		return str
+	end
+	local function table_slice(tbl, first, last, step)
+		local sliced = {}
+
+		for i = first or 1, last or #tbl, step or 1 do
+			sliced[#sliced+1] = tbl[i]
+		end
+
+		return sliced
+	end
+	local function put_one_comment(comment, level)
+		local comment_head = string.format("%s | %s | %s", comment.user.login, comment.user.name, comment.created_at)
+		local level_space = space_with_level(level)
+
+		output:append(level_space .. "> " .. comment_head)
+		add_sign("GlanceLogCommentHead")
+		comment.start_line = #output
+
+		output:append("")
+		local comment_body = vim.split(comment.body, "\n")
+		for _, line in pairs(comment_body) do
+			output:append("  " .. level_space .. line)
+		end
+		output:append("")
+		comment.end_line = #output
+
+		if comment.children then
+			for _, child in pairs(comment.children) do
+				local child_level = level + 1
+				put_one_comment(child, child_level)
+			end
+		end
+	end
+
+	if not comment.in_reply_to_id then
+		put_one_comment(comment, level)
+	end
+
+	local lines = table_slice(output, comment.start_line, comment.end_line)
+	self.buffer:unlock()
+	self.buffer:set_lines(comment.start_line - 1, comment.end_line - 1, false, lines)
+
+	for line, name in pairs(signs) do
+		self.buffer:place_sign(line, name, "hl")
+	end
+	self.buffer:lock()
+	vim.cmd("syntax on")
+end
+
 function M:create_buffer()
 	local commits = self.commits
 	local commit_start_line = self.commit_start_line
@@ -181,6 +321,13 @@ function M:create_buffer()
 						return
 					end
 					vim.notify("Not a commit", vim.log.levels.WARN)
+				end,
+				["<c-r>"] = function()
+					if not self.pr_number then
+						vim.notify("not a pr", vim.log.levels.WARN, {})
+						return
+					end
+					self:do_pr_comment()
 				end,
 				["q"] = function()
 					self:close()
@@ -317,8 +464,10 @@ function M:open_buffer()
 		local function put_one_comment(comment, level)
 			local comment_head = string.format("%s | %s | %s", comment.user.login, comment.user.name, comment.created_at)
 			local level_space = space_with_level(level)
+
 			output:append(level_space .. "> " .. comment_head)
 			add_sign("GlanceLogCommentHead")
+			comment.start_line = #output
 
 			output:append("")
 			local comment_body = vim.split(comment.body, "\n")
@@ -326,6 +475,7 @@ function M:open_buffer()
 				output:append("  " .. level_space .. line)
 			end
 			output:append("")
+			comment.end_line = #output
 
 			if comment.children then
 				local child_level = level + 1
@@ -339,6 +489,8 @@ function M:open_buffer()
 			put_one_comment(comment, level)
 		end
 	end
+
+	self.text = output
 
 	buffer:replace_content_with(output)
 
