@@ -285,6 +285,26 @@ function M.new(commit_id)
 	return instance
 end
 
+function M.new_pr_alldiff(cmdline, parent_log)
+	local output = vim.fn.systemlist("git diff " .. cmdline)
+	if vim.v.shell_error ~= 0 then
+		return nil
+	end
+	local commit_info = parse_commit_info(output, true)
+
+	local instance = {
+		is_open = false,
+		commit_info = commit_info,
+		parent_log = parent_log,
+		buffer = nil,
+		view_scrollbind = nil,
+	}
+
+	setmetatable(instance, { __index = M })
+
+	return instance
+end
+
 function M.get_upstream_commit(commit_id)
 	local upstream_commit_id = parse_upstream_commit(vim.fn.systemlist("git log --format=%B -n 1 " .. commit_id))
 
@@ -373,6 +393,36 @@ function M:open(usr_opts)
 			n = {
 				["q"] = function()
 					self:close()
+				end,
+				["<c-r>"] = function()
+					if not self.parent_log then
+						vim.notify("Not a alldiff view, can't create comment", vim.log.levels.ERROR, {})
+					end
+					local line = vim.fn.line '.'
+					for _, diff in ipairs(self.commit_info.diffs) do
+						if line > diff.start_line and line <= diff.end_line then
+							for _, hunk in ipairs(diff.hunks) do
+								if line > hunk.start_line and line <= hunk.end_line then
+									local offset = line - hunk.start_line
+									offset = hunk.diff_from + offset
+									local text = diff.lines[offset]
+									if not vim.startswith(text, "+") then
+										vim.notify("Not new line", vim.log.levels.ERROR, {})
+										return
+									end
+									local file_pos = hunk.disk_from
+									for i=hunk.diff_from+1,offset do
+										text = diff.lines[i]
+										if not vim.startswith(text, "-") then
+											file_pos = file_pos + 1
+										end
+									end
+									file_pos = file_pos - 1
+									self.parent_log:do_pr_comment(diff.file, file_pos)
+								end
+							end
+						end
+					end
 				end
 			}
 		},
@@ -433,7 +483,7 @@ function M:initialize()
 		hl_map = highlight_maps.Commit
 	end
 
-	if vim.bo.filetype == "GlanceCommit" then
+	if vim.bo.filetype == "GlanceCommit" and not self.parent_log then
 		output:append("Commit " .. self.commit_id)
 		add_sign(hl_map.viewheader) -- 'GlanceCommitViewHeader'
 		output:append("<remote>/<branch> " .. info.oid)
@@ -478,6 +528,7 @@ function M:initialize()
 	end
 
 	for _, diff in ipairs(info.diffs) do
+		diff.start_line = #output + 1
 		for _, header in ipairs(diff.headers) do
 			output:append(header)
 		end
@@ -486,6 +537,7 @@ function M:initialize()
 		end
 		for _, hunk in ipairs(diff.hunks) do
 			output:append(diff.lines[hunk.diff_from])
+			hunk.start_line = #output
 			add_sign(hl_map.hunkheader) -- 'GlanceHunkHeader'
 			for i=hunk.diff_from + 1, hunk.diff_to do
 				local l = diff.lines[i]
@@ -518,7 +570,9 @@ function M:initialize()
 					end
 				end
 			end
+			hunk.end_line = #output
 		end
+		diff.end_line = #output
 	end
 	buffer:replace_content_with(output)
 

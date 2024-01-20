@@ -81,6 +81,16 @@ function M.new(cmdline, pr)
 	return instance
 end
 
+function M:open_alldiff_view()
+	if not self.pr then
+		vim.notify("Not a pr log", vim.log.levels.WARN, {})
+	end
+	local view = CommitView.new_pr_alldiff(self.cmdline, self)
+	if not view then return end
+	view:open()
+	view:initialize()
+end
+
 function M:open_commit_view(commit)
 	local view = CommitView.new(commit)
 	if (view == nil) then
@@ -162,6 +172,12 @@ function M:post_pr_comment(message)
 			["body"] = message,
 		},
 	}
+	if self.comment_file then
+		opts.body["path"] = self.comment_file
+		opts.body["position"] = self.comment_file_pos
+		vim.notify("file: "..self.comment_file, vim.log.levels.INFO, {})
+		vim.notify("file_pos: "..self.comment_file_pos, vim.log.levels.INFO, {})
+	end
 	vim.notify("url: " .. opts.url, vim.log.levels.INFO, {})
 	local response = curl["post"](opts)
 	if response.exit ~= 0 or response.status ~= 201 then
@@ -292,6 +308,9 @@ function M:create_buffer()
 		bufhidden = "hide",
 		mappings = {
 			n = {
+				["<c-a>"] = function()
+					self:open_alldiff_view()
+				end,
 				["<enter>"] = function()
 					local line = vim.fn.line '.'
 					if line >= commit_start_line and line < commit_start_line + commit_count then
