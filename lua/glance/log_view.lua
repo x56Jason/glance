@@ -328,8 +328,8 @@ function M:open_buffer()
 			output:append("")
 
 			if comment.children then
+				local child_level = level + 1
 				for _, child in pairs(comment.children) do
-					local child_level = level + 1
 					put_one_comment(child, child_level)
 				end
 			end
