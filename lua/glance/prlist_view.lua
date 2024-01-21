@@ -4,6 +4,15 @@ local LineBuffer = require('glance.line_buffer')
 
 local M = {}
 
+local function add_highlight(highlights, line, from, to, name)
+	table.insert(highlights, {
+		line = line - 1,
+		from = from,
+		to = to,
+		name = name
+	})
+end
+
 function M.new(prlist)
 	local instance = {
 		prlist = prlist,
@@ -49,6 +58,39 @@ function M:create_buffer()
 	self.buffer = buffer
 end
 
+local function prepare_one_pr(output, highlights, pr)
+	local title = pr.title:match("%s*(.+)") .. "                        "
+	local entry = string.format("%04d", pr.number) .. " " .. title
+
+	local from = 0
+	local to = 4
+	add_highlight(highlights, #output + 1, from, to, "GlanceLogCommit")
+	from = to + 1
+	to = from + #title
+	add_highlight(highlights, #output + 1, from, to, "GlanceLogSubject")
+
+	local label_hl_name = {
+		["openeuler-cla/yes"] = "GlanceLogCLAYes",
+		["lgtm"] = "GlanceLogLGTM",
+		["ci_successful"] = "GlanceLogCISuccess",
+		["sig/Kernel"] = "GlanceLogSigKernel",
+		["stat/needs-squash"] = "GlanceLogNeedSquash",
+		["newcomer"] = "GlanceLogNewComer",
+	}
+
+	for _, label in pairs(pr.labels) do
+		local label_str = label.name
+		entry = entry .. " | " .. label_str
+		from = to + 3
+		to = from + #label_str
+		if label_hl_name[label_str] then
+			add_highlight(highlights, #output + 1, from, to, label_hl_name[label_str])
+		end
+	end
+
+	output:append(entry)
+end
+
 function M:open_buffer()
 	local buffer = self.buffer
 	if buffer == nil then
@@ -58,24 +100,8 @@ function M:open_buffer()
 	local output = LineBuffer.new()
 	local highlights = {}
 
-	local function add_highlight(from, to, name)
-		table.insert(highlights, {
-			line = #output - 1,
-			from = from,
-			to = to,
-			name = name
-		})
-	end
-
 	for _, pr in ipairs(self.prlist) do
-		local title = pr.title:match("%s*(.+)")
-		output:append(string.format("%04d", pr.number) .. " " .. title)
-		local from = 0
-		local to = 4
-		add_highlight(from, to, "GlanceLogCommit")
-		from = to + 1
-		to = from + #title
-		add_highlight(from, to, "GlanceLogSubject")
+		prepare_one_pr(output, highlights, pr)
 	end
 
 	buffer:replace_content_with(output)
@@ -83,14 +109,22 @@ function M:open_buffer()
 	for _, hi in ipairs(highlights) do
 		buffer:add_highlight(hi.line, hi.from, hi.to, hi.name)
 	end
+
 	buffer:set_option("modifiable", false)
 	buffer:set_option("readonly", true)
 
 	M.buffer = buffer
 	M.highlights = highlights
+
+	vim.cmd("hi CursorLine cterm=NONE ctermbg=darkred ctermfg=white guibg=darkred guifg=white")
+	--vim.cmd("hi CursorLine cterm=NONE ctermbg=#dc322f ctermfg=white guibg=#dc322f guifg=white")
+	vim.cmd("setlocal cursorline")
+
 	vim.api.nvim_create_autocmd({"ColorScheme"}, {
 		pattern = { "*" },
 		callback = function()
+			--vim.cmd("hi CursorLine cterm=NONE ctermbg=#dc322f ctermfg=white guibg=#dc322f guifg=white")
+			vim.cmd("hi CursorLine cterm=NONE ctermbg=darkred ctermfg=white guibg=darkred guifg=white")
 			vim.cmd("syntax on")
 		end,
 	})
