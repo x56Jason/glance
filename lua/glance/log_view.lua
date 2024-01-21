@@ -262,7 +262,7 @@ function M:append_comment(comment, level)
 		return sliced
 	end
 	local function put_one_comment(comment, level)
-		local comment_head = string.format("%s | %s | %s", comment.user.login, comment.user.name, comment.created_at)
+		local comment_head = string.format("%d | %s | %s | %s", comment.id, comment.user.login, comment.user.name, comment.created_at)
 		local level_space = space_with_level(level)
 
 		output:append(level_space .. "> " .. comment_head)
@@ -483,7 +483,7 @@ function M:open_buffer()
 			return str
 		end
 		local function put_one_comment(comment, level)
-			local comment_head = string.format("%s | %s | %s", comment.user.login, comment.user.name, comment.created_at)
+			local comment_head = string.format("%d | %s | %s | %s", comment.id, comment.user.login, comment.user.name, comment.created_at)
 			local level_space = space_with_level(level)
 
 			output:append(level_space .. "> " .. comment_head)
