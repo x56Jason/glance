@@ -348,6 +348,10 @@ function M:create_buffer()
 						vim.notify("not a pr", vim.log.levels.WARN, {})
 						return
 					end
+					local answer = vim.fn.confirm("Create a comment for this PR?", "&yes\n&no")
+					if answer ~= 1 then
+						return
+					end
 					self:do_pr_comment()
 				end,
 				["q"] = function()
