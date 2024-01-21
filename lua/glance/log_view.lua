@@ -233,6 +233,8 @@ function M:do_pr_comment(file, file_pos)
 			self.comment_buffer = nil
 		end,
 	})
+
+	vim.cmd('startinsert')
 end
 
 function M:append_comment(comment, level)
