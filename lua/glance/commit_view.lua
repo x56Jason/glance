@@ -432,6 +432,11 @@ function M:open(usr_opts)
 				["<c-r>"] = function()
 					if not self.parent_log then
 						vim.notify("Not a alldiff view, can't create comment", vim.log.levels.ERROR, {})
+						return
+					end
+					local answer = vim.fn.confirm("Create a comment for this PR?", "&yes\n&no")
+					if answer ~= 1 then
+						return
 					end
 					local line = vim.fn.line '.'
 					local pos = diff_get_newfile_pos(self.commit_info, line, true)
