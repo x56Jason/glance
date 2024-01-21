@@ -378,6 +378,41 @@ function M:close()
 	self.view_scrollbind = nil
 end
 
+local function diff_get_newfile_pos(commit_info, line, strict)
+	for _, diff in ipairs(commit_info.diffs) do
+		local diff_hunk_start_line = diff.start_line + #diff.headers
+		if line >= diff.start_line and line < diff_hunk_start_line then
+			if not strict then
+				return { file = diff.file, file_pos = 1, text = "" }
+			else
+				return nil
+			end
+		end
+		if line >= diff_hunk_start_line and line <= diff.end_line then
+			for _, hunk in ipairs(diff.hunks) do
+				if line > hunk.start_line and line <= hunk.end_line then
+					local offset = line - hunk.start_line
+					offset = hunk.diff_from + offset
+					local text = diff.lines[offset]
+					local file_pos = hunk.disk_from
+					for i=hunk.diff_from+1,offset do
+						text = diff.lines[i]
+						if not vim.startswith(text, "-") then
+							file_pos = file_pos + 1
+						end
+					end
+					file_pos = file_pos - 1
+					return { file = diff.file, file_pos = file_pos, text = diff.lines[offset], }
+				end
+			end
+		end
+	end
+	if strict then
+		return nil
+	end
+	return { file = commit_info.diffs[1].file, file_pos = commit_info.diffs[1].hunks[1].disk_from, text = "" }
+end
+
 function M:open(usr_opts)
 	if self.is_open then
 		return
@@ -399,30 +434,16 @@ function M:open(usr_opts)
 						vim.notify("Not a alldiff view, can't create comment", vim.log.levels.ERROR, {})
 					end
 					local line = vim.fn.line '.'
-					for _, diff in ipairs(self.commit_info.diffs) do
-						if line > diff.start_line and line <= diff.end_line then
-							for _, hunk in ipairs(diff.hunks) do
-								if line > hunk.start_line and line <= hunk.end_line then
-									local offset = line - hunk.start_line
-									offset = hunk.diff_from + offset
-									local text = diff.lines[offset]
-									if not vim.startswith(text, "+") then
-										vim.notify("Not new line", vim.log.levels.ERROR, {})
-										return
-									end
-									local file_pos = hunk.disk_from
-									for i=hunk.diff_from+1,offset do
-										text = diff.lines[i]
-										if not vim.startswith(text, "-") then
-											file_pos = file_pos + 1
-										end
-									end
-									file_pos = file_pos - 1
-									self.parent_log:do_pr_comment(diff.file, file_pos)
-								end
-							end
-						end
+					local pos = diff_get_newfile_pos(self.commit_info, line, true)
+					if not pos or pos.file_pos == 0 then
+						vim.notify("Not in diff section, can't create comment", vim.log.levels.ERROR, {})
+						return
 					end
+					if not vim.startswith(pos.text, "+") then
+						vim.notify("Not newfile line", vim.log.levels.ERROR, {})
+						return
+					end
+					self.parent_log:do_pr_comment(pos.file, pos.file_pos)
 				end
 			}
 		},
