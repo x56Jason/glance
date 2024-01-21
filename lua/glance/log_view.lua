@@ -6,6 +6,27 @@ local LineBuffer = require('glance.line_buffer')
 
 local M = {}
 
+local function space_with_level(level)
+	local str = ""
+	for i = 1, level do
+		str = str .. "    "
+	end
+	return str
+end
+
+local function add_sign(signs, index, name)
+	signs[index] = name
+end
+
+local function add_highlight(highlights, line, from, to, name)
+	table.insert(highlights, {
+		line = line - 1,
+		from = from,
+		to = to,
+		name = name
+	})
+end
+
 local function parse_log(output)
 	local output_len = #output
 	local commits = {}
@@ -174,6 +195,12 @@ function M:delete_pr_comment(comment)
 		vim.notify("response: " .. response.body, vim.log.levels.INFO, {})
 		return
 	end
+
+	self.comments = glance.get_pr_comments(self.pr_number)
+	self.buffer:unlock()
+	self.buffer:set_lines(self.comment_start_line-1, -1, false, {})
+	self:append_comments(self.comments, 0)
+	self.buffer:lock()
 end
 
 function M:post_pr_comment(message)
@@ -234,7 +261,7 @@ function M:do_pr_comment(file, file_pos)
 					local comment = self:post_pr_comment(message)
 					if comment then
 						table.insert(self.comments, comment)
-						self:append_comment(comment, 0)
+						self:append_comments({comment}, 0)
 					end
 					self.comment_buffer:close()
 				end,
@@ -257,21 +284,38 @@ function M:do_pr_comment(file, file_pos)
 	vim.cmd('startinsert')
 end
 
-function M:append_comment(comment, level)
-	local output = self.text
+local function put_one_comment(output, signs, comment, level)
+	local comment_head = string.format("%d | %s | %s | %s", comment.id, comment.user.login, comment.user.name, comment.created_at)
+	local level_space = space_with_level(level)
+
+	output:append(level_space .. "> " .. comment_head)
+	add_sign(signs, #output, "GlanceLogCommentHead")
+	comment.start_line = #output
+
+	output:append("")
+	local comment_body = vim.split(comment.body, "\n")
+	for _, line in pairs(comment_body) do
+		output:append("  " .. level_space .. line)
+	end
+	output:append("")
+	comment.end_line = #output
+
+	if comment.children then
+		local child_level = level + 1
+		for _, child in pairs(comment.children) do
+			put_one_comment(output, signs, child, child_level)
+		end
+	end
+end
+
+function M:append_comments(comments, level)
+	if #comments == 0 then
+		return
+	end
+
+	local output = LineBuffer.new(self.buffer:get_lines(0, -1, false))
 	local signs = {}
 
-	local function add_sign(name)
-		signs[#output] = name
-	end
-
-	local function space_with_level(level)
-		local str = ""
-		for i = 1, level do
-			str = str .. "    "
-		end
-		return str
-	end
 	local function table_slice(tbl, first, last, step)
 		local sliced = {}
 
@@ -281,37 +325,17 @@ function M:append_comment(comment, level)
 
 		return sliced
 	end
-	local function put_one_comment(comment, level)
-		local comment_head = string.format("%d | %s | %s | %s", comment.id, comment.user.login, comment.user.name, comment.created_at)
-		local level_space = space_with_level(level)
-
-		output:append(level_space .. "> " .. comment_head)
-		add_sign("GlanceLogCommentHead")
-		comment.start_line = #output
-
-		output:append("")
-		local comment_body = vim.split(comment.body, "\n")
-		for _, line in pairs(comment_body) do
-			output:append("  " .. level_space .. line)
-		end
-		output:append("")
-		comment.end_line = #output
-
-		if comment.children then
-			for _, child in pairs(comment.children) do
-				local child_level = level + 1
-				put_one_comment(child, child_level)
-			end
+	local start_line = #output + 1
+	for _, comment in pairs(comments) do
+		if not comment.in_reply_to_id then
+			put_one_comment(output, signs, comment, level)
 		end
 	end
+	local end_line = #output
 
-	if not comment.in_reply_to_id then
-		put_one_comment(comment, level)
-	end
-
-	local lines = table_slice(output, comment.start_line, comment.end_line)
+	local lines = table_slice(output, start_line, end_line)
 	self.buffer:unlock()
-	self.buffer:set_lines(comment.start_line - 1, comment.end_line - 1, false, lines)
+	self.buffer:set_lines(start_line - 1, end_line - 1, false, lines)
 
 	for line, name in pairs(signs) do
 		self.buffer:place_sign(line, name, "hl")
@@ -416,6 +440,89 @@ function M:create_buffer()
 	self.buffer = buffer
 end
 
+local function put_one_commit(output, highlights, commit)
+	if commit.remote == "" then
+		output:append(string.sub(commit.hash, 1, 12) .. " " .. commit.message)
+	else
+		output:append(string.sub(commit.hash, 1, 12) .. " (" .. commit.remote .. ") " .. commit.message)
+	end
+
+	local from = 0
+	local to = 12 -- length of abrev commit_id
+	add_highlight(highlights, #output, from, to, "GlanceLogCommit")
+	from = to + 1
+	if commit.remote ~= "" then
+		to = from + #commit.remote + 2
+		add_highlight(highlights, #output, from, to, "GlanceLogRemote")
+		from = to + 1
+	end
+	to = from + #commit.message
+	add_highlight(highlights, #output, from, to, "GlanceLogSubject")
+end
+
+function M:put_pr_headers(output, highlights, signs)
+	local label_hl_name = {
+		["openeuler-cla/yes"] = "GlanceLogCLAYes",
+		["lgtm"] = "GlanceLogLGTM",
+		["ci_successful"] = "GlanceLogCISuccess",
+		["sig/Kernel"] = "GlanceLogSigKernel",
+		["stat/needs-squash"] = "GlanceLogNeedSquash",
+		["newcomer"] = "GlanceLogNewComer",
+	}
+	local head = "Pull-Request !" .. self.pr_number .. "        "
+	local hls = {}
+	local from = 0
+	local to = #head
+	table.insert(hls, {from=from, to=to, name="GlanceLogHeader"})
+	for _, label in pairs(self.labels) do
+		local label_str = label.name
+		head = head .. " | " .. label_str
+		from = to + 3
+		to = from + #label_str
+		if label_hl_name[label_str] then
+			table.insert(hls, {from=from, to=to, name=label_hl_name[label_str]})
+		end
+	end
+	output:append(head)
+	for _, hl in pairs(hls) do
+		add_highlight(highlights, #output, hl.from, hl.to, hl.name)
+	end
+
+	output:append("---")
+
+	output:append("URL:      " .. self.head.url)
+	add_sign(signs, #output, "GlanceLogHeaderField")
+	output:append("Creator:  " .. self.head.creator)
+	add_sign(signs, #output, "GlanceLogHeaderField")
+	output:append("Head:     " .. self.head.head)
+	add_sign(signs, #output, "GlanceLogHeaderHead")
+	output:append("Base:     " .. self.head.base)
+	add_sign(signs, #output, "GlanceLogHeaderBase")
+	output:append("Created:  " .. self.head.created_at)
+	add_sign(signs, #output, "GlanceLogHeaderField")
+	output:append("Updated:  " .. self.head.updated_at)
+	add_sign(signs, #output, "GlanceLogHeaderField")
+	if self.head.mergeable then
+		output:append("Mergable: true")
+	else
+		output:append("Mergable: false")
+	end
+	add_sign(signs, #output, "GlanceLogHeaderField")
+	output:append("State:    " .. self.head.state)
+	add_sign(signs, #output, "GlanceLogHeaderField")
+	output:append("Title:    " .. self.head.title)
+end
+
+function M:put_pr_body(output)
+	for _, line in pairs(self.body) do
+		local to = string.find(line, "\r", 1)
+		if to then
+			line = string.sub(line, 1, to - 1)
+		end
+		output:append("    " .. line)
+	end
+end
+
 function M:open_buffer()
 	local buffer = self.buffer
 	if buffer == nil then
@@ -426,142 +533,25 @@ function M:open_buffer()
 	local signs = {}
 	local highlights = {}
 
-	local function add_sign(name)
-		signs[#output] = name
-	end
-
-	local function add_highlight(from, to, name)
-		table.insert(highlights, {
-			line = #output - 1,
-			from = from,
-			to = to,
-			name = name
-		})
-	end
-
 	if self.body then
-		local label_hl_name = {
-			["openeuler-cla/yes"] = "GlanceLogCLAYes",
-			["lgtm"] = "GlanceLogLGTM",
-			["ci_successful"] = "GlanceLogCISuccess",
-			["sig/Kernel"] = "GlanceLogSigKernel",
-			["stat/needs-squash"] = "GlanceLogNeedSquash",
-			["newcomer"] = "GlanceLogNewComer",
-		}
-		local head = "Pull-Request !" .. self.pr_number .. "        "
-		local hls = {}
-		local from = 0
-		local to = #head
-		table.insert(hls, {from=from, to=to, name="GlanceLogHeader"})
-		for _, label in pairs(self.labels) do
-			local label_str = label.name
-			head = head .. " | " .. label_str
-			from = to + 3
-			to = from + #label_str
-			if label_hl_name[label_str] then
-				table.insert(hls, {from=from, to=to, name=label_hl_name[label_str]})
-			end
-		end
-		output:append(head)
-		for _, hl in pairs(hls) do
-			add_highlight(hl.from, hl.to, hl.name)
-		end
-
+		self:put_pr_headers(output, highlights, signs)
 		output:append("---")
 
-		output:append("URL:      " .. self.head.url)
-		add_sign("GlanceLogHeaderField")
-		output:append("Creator:  " .. self.head.creator)
-		add_sign("GlanceLogHeaderField")
-		output:append("Head:     " .. self.head.head)
-		add_sign("GlanceLogHeaderHead")
-		output:append("Base:     " .. self.head.base)
-		add_sign("GlanceLogHeaderBase")
-		output:append("Created:  " .. self.head.created_at)
-		add_sign("GlanceLogHeaderField")
-		output:append("Updated:  " .. self.head.updated_at)
-		add_sign("GlanceLogHeaderField")
-		if self.head.mergeable then
-			output:append("Mergable: true")
-		else
-			output:append("Mergable: false")
-		end
-		add_sign("GlanceLogHeaderField")
-		output:append("State:    " .. self.head.state)
-		add_sign("GlanceLogHeaderField")
-		output:append("Title:    " .. self.head.title)
-		output:append("---")
-
-		for _, line in pairs(self.body) do
-			local to = string.find(line, "\r", 1)
-			if to then
-				line = string.sub(line, 1, to - 1)
-			end
-			output:append("    " .. line)
-		end
+		self:put_pr_body(output)
 		output:append("---")
 	end
 
 	for _, commit in pairs(self.commits) do
-		if commit.remote == "" then
-			output:append(string.sub(commit.hash, 1, 12) .. " " .. commit.message)
-		else
-			output:append(string.sub(commit.hash, 1, 12) .. " (" .. commit.remote .. ") " .. commit.message)
-		end
-
-		local from = 0
-		local to = 12 -- length of abrev commit_id
-		add_highlight(from, to, "GlanceLogCommit")
-		from = to + 1
-		if commit.remote ~= "" then
-			to = from + #commit.remote + 2
-			add_highlight(from, to, "GlanceLogRemote")
-			from = to + 1
-		end
-		to = from + #commit.message
-		add_highlight(from, to, "GlanceLogSubject")
+		put_one_commit(output, highlights, commit)
 	end
 	output:append("---")
 
 	local level = 0
 	for _, comment in pairs(self.comments) do
-		local function space_with_level(level)
-			local str = ""
-			for i = 1, level do
-				str = str .. "    "
-			end
-			return str
-		end
-		local function put_one_comment(comment, level)
-			local comment_head = string.format("%d | %s | %s | %s", comment.id, comment.user.login, comment.user.name, comment.created_at)
-			local level_space = space_with_level(level)
-
-			output:append(level_space .. "> " .. comment_head)
-			add_sign("GlanceLogCommentHead")
-			comment.start_line = #output
-
-			output:append("")
-			local comment_body = vim.split(comment.body, "\n")
-			for _, line in pairs(comment_body) do
-				output:append("  " .. level_space .. line)
-			end
-			output:append("")
-			comment.end_line = #output
-
-			if comment.children then
-				local child_level = level + 1
-				for _, child in pairs(comment.children) do
-					put_one_comment(child, child_level)
-				end
-			end
-		end
-
 		if not comment.in_reply_to_id then
-			put_one_comment(comment, level)
+			put_one_comment(output, signs, comment, level)
 		end
 	end
-
-	self.text = output
 
 	buffer:replace_content_with(output)
 
