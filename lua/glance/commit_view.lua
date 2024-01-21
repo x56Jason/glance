@@ -429,6 +429,21 @@ function M:open(usr_opts)
 				["q"] = function()
 					self:close()
 				end,
+				["<c-o>"] = function()
+					if not self.commit_id then
+						vim.notify("Dont know which commit to checkout", vim.log.levels.ERROR, {})
+						return
+					end
+					local answer = vim.fn.confirm("Checkout this commit to workspace?", "&yes\n&no")
+					if answer ~= 1 then
+						return
+					end
+					local line = vim.fn.line '.'
+					local pos = diff_get_newfile_pos(self.commit_info, line, false)
+					vim.cmd("!git checkout --detach " .. self.commit_id)
+					vim.cmd("edit " .. pos.file)
+					vim.cmd("norm " .. pos.file_pos.. "G")
+				end,
 				["<c-r>"] = function()
 					if not self.parent_log then
 						vim.notify("Not a alldiff view, can't create comment", vim.log.levels.ERROR, {})
