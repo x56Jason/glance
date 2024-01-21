@@ -12,7 +12,10 @@ For Gitee usage, you need to generate a private token for Gitee API usage.
 
 You can omit the gitee part if you are not using for Gitee pull-request workflow.
 
+The ['plenary.nvim'](https://github.com/nvim-lua/plenary.nvim) plugin is a dependency, so it also need to be installed.
+
 ```lua
+{ "nvim-lua/plenary.nvim" },
 {
     "x48Jason/glance",
     opts = {
@@ -69,12 +72,26 @@ The window is devided into 3 parts:
 - The middle part is the Commits part, where all the commits of this pull-requests will be shown.
 - The bottom part is the Comments part, where all the comments for this pull-requests will be shown
 
+#### Browse Commit Patch
+
 The following keys are available for showing patches in different ways.
 
 - Press \<enter\> on one commit will show the patch of this commit.
 - Press 'l' on one commit will show the upstream commit patch and the backport commit patch, if it is a backport commmit.
 - Press 'p' on one commit will show the diff between upstream commit patch and the backport commit patch, if it is a backport commit. Aka, diff of patch.
 - Press 'q' on the diff window will quit the diff window.
+
+#### Checkout Commit into Workspace
+
+When in commit-patch (\<enter\> pressed on a commit), \<Ctrl-o\> will checkout the commit into current workspace, and start editing the file corresponding to current diff hunk.
+
+#### Add Comment for Pull-Request
+
+Use \<Ctrl-r\> to add a comment for current pull-request.
+
+#### Delete Comment for Pull-Request
+
+When cursor is in the area of a comment for the pull-request, \<ctrl-d\> will delete the comment.
 
 ### 'Glance log' Command
 
@@ -117,10 +134,13 @@ By default, it is off
 
 In Glance log view, on each commit, following keymaps are available:
 
-| Key       | Description                                               |
-|-----------|-----------------------------------------------------------|
-| \<enter\> | show the current commit                                   |
-|    p      | show the diff between upstream commit and backport commit |
-|    l      | show side by side the upstream commit and backport commit |
-|    q      | close the corresponding window                            |
+| Key       |       Where       | Description                                               |
+|-----------|-------------------|-----------------------------------------------------------|
+| \<enter\> |   PR Commit Area  | Show the current commit                                   |
+|    p      |   PR Commit Area  | Show the diff between upstream commit and backport commit |
+|    l      |   PR Commit Area  | Show side by side the upstream commit and backport commit |
+|    q      |   Temp Window     | Close the corresponding window                            |
+| \<c-o\>   |   Commit-Patch    | Checkout current commit into workspace                    |
+| \<c-r\>   |        PR         | Create a comment for current PR                           |
+| \<c-d\>   |        PR         | Delete comment under cursor                               |
 
