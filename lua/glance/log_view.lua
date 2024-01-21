@@ -164,18 +164,15 @@ function M:delete_pr_comment(comment)
 			["Accept"] = "application/json",
 			["User-Agent"] = "Glance",
 		},
-		body = {
-			["access_token"] = token,
-			["body"] = message,
-		},
 	}
 	opts.url = "https://gitee.com/api/v5/repos/" .. glance.config.gitee.repo .. "/pulls/comments/" .. comment.id
 	opts.url = opts.url .. "?access_token=" .. token .. "&id=" .. comment.id
 	vim.notify("url: "..opts.url, vim.log.levels.INFO, {})
 	local response = curl["delete"](opts)
-	vim.notify("response: exit: "..response.exit.."status: "..response.status, vim.log.levels.INFO, {})
+	vim.notify("response: exit: "..response.exit..", status: "..response.status, vim.log.levels.INFO, {})
 	if response.exit ~= 0 then
 		vim.notify("response: " .. response.body, vim.log.levels.INFO, {})
+		return
 	end
 end
 
