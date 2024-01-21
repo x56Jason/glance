@@ -156,6 +156,29 @@ function M:close()
 	self.buffer = nil
 end
 
+function M:delete_pr_comment(comment)
+	local token = glance.config.gitee.token
+	local opts = {
+		method = "delete",
+		headers = {
+			["Accept"] = "application/json",
+			["User-Agent"] = "Glance",
+		},
+		body = {
+			["access_token"] = token,
+			["body"] = message,
+		},
+	}
+	opts.url = "https://gitee.com/api/v5/repos/" .. glance.config.gitee.repo .. "/pulls/comments/" .. comment.id
+	opts.url = opts.url .. "?access_token=" .. token .. "&id=" .. comment.id
+	vim.notify("url: "..opts.url, vim.log.levels.INFO, {})
+	local response = curl["delete"](opts)
+	vim.notify("response: exit: "..response.exit.."status: "..response.status, vim.log.levels.INFO, {})
+	if response.exit ~= 0 then
+		vim.notify("response: " .. response.body, vim.log.levels.INFO, {})
+	end
+end
+
 function M:post_pr_comment(message)
 	local pr_number = self.pr_number
 	local token = glance.config.gitee.token
@@ -300,6 +323,15 @@ function M:append_comment(comment, level)
 	vim.cmd("syntax on")
 end
 
+function M:get_cursor_comment(line)
+	for _, comment in ipairs(self.comments) do
+		if line >= comment.start_line and line <= comment.end_line then
+			return comment
+		end
+	end
+	return nil
+end
+
 function M:create_buffer()
 	local commits = self.commits
 	local commit_start_line = self.commit_start_line
@@ -353,6 +385,23 @@ function M:create_buffer()
 						return
 					end
 					self:do_pr_comment()
+				end,
+				["<c-d>"] = function()
+					if not self.pr_number then
+						vim.notify("not a pr", vim.log.levels.WARN, {})
+						return
+					end
+					local line = vim.fn.line '.'
+					local comment = self:get_cursor_comment(line)
+					if not comment then
+						vim.notify("Cursor not in a comment", vim.log.levels.WARN, {})
+						return
+					end
+					local answer = vim.fn.confirm(string.format("Delete comment (id %d)?", comment.id), "&yes\n&no")
+					if answer ~= 1 then
+						return
+					end
+					self:delete_pr_comment(comment)
 				end,
 				["q"] = function()
 					self:close()
