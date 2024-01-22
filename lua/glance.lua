@@ -134,8 +134,9 @@ function M.do_glance_pr(cmdline)
 	vim.cmd(string.format("!git fetch %s %s", pr.base_user, pr.base_branch))
 
 	local commit_from = vim.fn.systemlist(string.format("git merge-base %s %s", pr.sha, pr.base_sha))[1]
+	pr.merge_base = commit_from
 
-	do_glance_log(string.format("%s..%s", commit_from, pr.sha), pr)
+	do_glance_log("", pr)
 end
 
 local function table_concat(t1,t2)

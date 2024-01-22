@@ -4,7 +4,9 @@ local Buffer = require("glance.buffer")
 local CommitView = require("glance.commit_view")
 local LineBuffer = require('glance.line_buffer')
 
-local M = {}
+local M = {
+	index = 1,
+}
 
 local function space_with_level(level)
 	local str = ""
@@ -63,10 +65,19 @@ function M.new(cmdline, pr)
 	local pr_number = pr and pr.number
 	local desc_head = pr and pr.desc_head
 	local desc_body = pr and pr.desc_body
+	local name = "GlanceLog-"
 
 	local commit_limit = "-256"
-	if cmdline ~= "" then
-		commit_limit = cmdline
+	if not pr then
+		if cmdline ~= "" then
+			commit_limit = cmdline
+		end
+		name = name .. M.index
+		M.index = M.index + 1
+	else
+		commit_limit = pr.merge_base .. ".." .. pr.sha
+		cmdline = commit_limit
+		name = pr.desc_head.url:gsub("^https?", "glance")
 	end
 	local cmd = "git log --oneline --no-abbrev-commit --decorate " .. commit_limit
 	local raw_output = vim.fn.systemlist(cmd)
@@ -85,6 +96,7 @@ function M.new(cmdline, pr)
 	local instance = {
 		cmdline = cmdline,
 		pr = pr,
+		name = name,
 		pr_number = pr_number,
 		labels = pr and pr.labels,
 		head = desc_head,
@@ -358,7 +370,7 @@ function M:create_buffer()
 	local commit_start_line = self.commit_start_line
 	local commit_count = get_table_size(self.commits)
 	local config = {
-		name = "GlanceLog",
+		name = self.name,
 		filetype = "GlanceLog",
 		bufhidden = "hide",
 		mappings = {
