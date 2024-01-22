@@ -118,7 +118,7 @@ function M:open_alldiff_view()
 	if not self.pr then
 		vim.notify("Not a pr log", vim.log.levels.WARN, {})
 	end
-	local view = CommitView.new_pr_alldiff(self.cmdline, self)
+	local view = CommitView.new_pr_alldiff(self.pr.merge_base, self.pr.sha, self)
 	if not view then return end
 	view:open()
 	view:initialize()

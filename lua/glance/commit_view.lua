@@ -273,6 +273,7 @@ function M.new(commit_id)
 
 	local instance = {
 		is_open = false,
+		name = "glance://commit/single/" .. commit_id,
 		commit_id = commit_id,
 		commit_info = commit_info,
 		commit_overview = commit_overview,
@@ -285,8 +286,8 @@ function M.new(commit_id)
 	return instance
 end
 
-function M.new_pr_alldiff(cmdline, parent_log)
-	local output = vim.fn.systemlist("git diff " .. cmdline)
+function M.new_pr_alldiff(commit_from, commit_to, parent_log)
+	local output = vim.fn.systemlist("git diff " .. commit_from .. ".." .. commit_to)
 	if vim.v.shell_error ~= 0 then
 		return nil
 	end
@@ -294,6 +295,7 @@ function M.new_pr_alldiff(cmdline, parent_log)
 
 	local instance = {
 		is_open = false,
+		name = "glance://commit/alldiff/" .. commit_from .. "-" .. commit_to,
 		commit_info = commit_info,
 		parent_log = parent_log,
 		buffer = nil,
@@ -354,6 +356,7 @@ function M.new_patchdiff(commit_id)
 
 	local instance = {
 		is_open = false,
+		name = "glance://commit/patchdiff/" .. upstream_commit_id .. "-" .. commit_id,
 		commit_id = commit_id,
 		upstream_commit_id = upstream_commit_id,
 		commit_info = commit_info,
@@ -421,7 +424,7 @@ function M:open(usr_opts)
 	local opts = usr_opts or {}
 	self.is_open = true
 	self.buffer = Buffer.create {
-		name = opts.name or "GlanceCommit",
+		name = self.name,
 		filetype = opts.filetype or "GlanceCommit",
 		kind = "vsplit",
 		mappings = {
