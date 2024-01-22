@@ -20,6 +20,7 @@ hi def GlanceLogSigKernel guibg=#000000 guifg=#1dcaf9
 hi def GlanceLogNeedSquash guibg=#000000 guifg=#febc08
 hi def GlanceLogNewComer guibg=#000000 guifg=#1083d6
 hi def GlanceLogCommentHead guibg=#000000 guifg=#94bbd1
+hi def GlanceLogCompareList guibg=#000000 guifg=#20c22c
 
 sign define GlanceLogHeader linehl=GlanceLogHeader
 sign define GlanceLogHeaderField linehl=GlanceLogHeaderField

@@ -365,6 +365,38 @@ function M:get_cursor_comment(line)
 	return nil
 end
 
+function M:update_one_commit(line)
+	local commits = self.commits
+	local commit_start_line = self.commit_start_line
+	local index = line - commit_start_line + 1
+	local commit = commits[index]
+	local output = ""
+
+	commit.in_comparelist = true
+
+	if commit.remote == "" then
+		output = string.sub(commit.hash, 1, 12) .. " " .. commit.message
+	else
+		output = string.sub(commit.hash, 1, 12) .. " (" .. commit.remote .. ") " .. commit.message
+	end
+	vim.notify("update_one_commit: ".. commit.hash, vim.log.levels.INFO, {})
+	self.buffer:unlock()
+	self.buffer:set_lines(line-1, line, false, {output})
+
+	local from = 0
+	local to = 12 -- length of abrev commit_id
+	self.buffer:add_highlight(line-1, from, to, "GlanceLogCompareList")
+	from = to + 1
+	if commit.remote ~= "" then
+		to = from + #commit.remote + 2
+		self.buffer:add_highlight(line-1, from, to, "GlanceLogRemote")
+		from = to + 1
+	end
+	to = from + #commit.message
+	self.buffer:add_highlight(line-1, from, to, "GlanceLogSubject")
+	self.buffer:lock()
+end
+
 function M:create_buffer()
 	local commits = self.commits
 	local commit_start_line = self.commit_start_line
@@ -376,6 +408,17 @@ function M:create_buffer()
 		mappings = {
 			n = {
 				["<c-a>"] = function()
+					local line = vim.fn.line '.'
+					if line < commit_start_line or line >= commit_start_line + commit_count then
+						vim.notify("Not a commit", vim.log.levels.WARN)
+						return
+					end
+					local index = line - commit_start_line + 1
+					local commit = commits[index].hash
+					glance.comparelist_add_commit(commit)
+					self:update_one_commit(line)
+				end,
+				["<c-t>"] = function()
 					self:open_alldiff_view()
 				end,
 				["<enter>"] = function()
@@ -461,7 +504,11 @@ local function put_one_commit(output, highlights, commit)
 
 	local from = 0
 	local to = 12 -- length of abrev commit_id
-	add_highlight(highlights, #output, from, to, "GlanceLogCommit")
+	local hl_name = "GlanceLogCommit"
+	if commit.in_comparelist then
+		hl_name = "GlanceLogCompareList"
+	end
+	add_highlight(highlights, #output, from, to, hl_name)
 	from = to + 1
 	if commit.remote ~= "" then
 		to = from + #commit.remote + 2

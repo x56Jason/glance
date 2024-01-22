@@ -1,6 +1,8 @@
 local curl = require('plenary.curl')
 
-local M = {}
+local M = {
+	comparelist = {},
+}
 
 M.config = {
 	patchdiff = "diffonly",
@@ -10,6 +12,14 @@ M.config = {
 local function do_glance_log(cmdline, pr)
 	local logview = require("glance.log_view").new(cmdline, pr)
 	logview:open()
+end
+
+function M.comparelist_add_commit(commit)
+	table.insert(M.comparelist, commit)
+end
+
+function M.comparelist_delete_all()
+	M.comparelist = {}
 end
 
 function M.set_config(config)
