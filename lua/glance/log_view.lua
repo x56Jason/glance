@@ -135,10 +135,14 @@ function M:open_commit_view(commit)
 end
 
 function M:open_parallel_views(commit)
-	local upstream_commit_id = CommitView.get_upstream_commit(commit)
+	local commit_id = commit.hash
+	local upstream_commit_id = CommitView.get_upstream_commit(commit_id)
 
 	if upstream_commit_id == nil then
-		upstream_commit_id = glance.comparelist_find_commit(commit)
+		local upstream_commit = glance.comparelist_find_commit(commit)
+		if upstream_commit then
+			upstream_commit_id = upstream_commit.hash
+		end
 	end
 
 	if upstream_commit_id == nil then
@@ -151,9 +155,9 @@ function M:open_parallel_views(commit)
 		vim.notify("Bad commit: " .. upstream_commit_id, vim.log.levels.ERROR, {})
 		return
 	end
-	local view_right = CommitView.new(commit)
+	local view_right = CommitView.new(commit_id)
 	if (view_right == nil) then
-		vim.notify("Bad commit: " .. commit, vim.log.levels.ERROR, {})
+		vim.notify("Bad commit: " .. commit_id, vim.log.levels.ERROR, {})
 		view_left:close()
 		return
 	end
@@ -167,7 +171,7 @@ function M:open_parallel_views(commit)
 	vim.cmd.normal("zz")
 	vim.cmd("set scrollbind")
 
-	view_right:open({name = "Backport: " .. commit})
+	view_right:open({name = "Backport: " .. commit_id})
 	view_right:initialize()
 	vim.cmd("wincmd L")
 	vim.cmd(string.format("%d", view_right:get_first_hunk_line()))
@@ -439,7 +443,7 @@ function M:create_buffer()
 					local line = vim.fn.line '.'
 					if line >= commit_start_line and line < commit_start_line + commit_count then
 						line = line - commit_start_line + 1
-						local commit = commits[line].hash
+						local commit = commits[line]
 						self:open_parallel_views(commit)
 						return
 					end
@@ -449,7 +453,7 @@ function M:create_buffer()
 					local line = vim.fn.line '.'
 					if line >= commit_start_line and line < commit_start_line + commit_count then
 						line = line - commit_start_line + 1
-						local commit = commits[line].hash
+						local commit = commits[line]
 						self:open_patchdiff_view(commit)
 						return
 					end

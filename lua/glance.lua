@@ -16,7 +16,7 @@ end
 
 function M.comparelist_find_commit(commit)
 	for _,c in ipairs(M.comparelist) do
-		if commit.message:find(c.message) or c.message:find(commit.message) then
+		if commit.message:find(c.message, 1, true) or c.message:find(commit.message, 1, true) then
 			return c
 		end
 	end
@@ -24,6 +24,11 @@ function M.comparelist_find_commit(commit)
 end
 
 function M.comparelist_add_commit(commit)
+	for _,c in ipairs(M.comparelist) do
+		if c.hash == commit.hash then
+			return
+		end
+	end
 	table.insert(M.comparelist, commit)
 end
 

@@ -1,3 +1,4 @@
+glance = require("glance")
 local Buffer = require("glance.buffer")
 local LineBuffer = require('glance.line_buffer')
 local md5 = require('glance.md5')
@@ -331,15 +332,23 @@ local function patchdiff_diffonly_compose(commit_id)
 	return {patch_cmd = commit_patch_cmd, patch_path = commit_patch_path}
 end
 
-function M.new_patchdiff(commit_id)
+function M.new_patchdiff(commit)
+	local commit_id = commit.hash
 	local upstream_commit_id = parse_upstream_commit(vim.fn.systemlist("git log --format=%B -n 1 " .. commit_id))
+
+	if upstream_commit_id == nil then
+		local upstream_commit = glance.comparelist_find_commit(commit)
+		if upstream_commit then
+			upstream_commit_id = upstream_commit.hash
+		end
+	end
 
 	if upstream_commit_id == nil then
 		vim.notify("Not a backport commit", vim.log.levels.ERROR, {})
 		return nil
 	end
 
-	local config = require("glance").config
+	local config = glance.config
 	local cmd_compose_func = patchdiff_full_compose
 	if config.patchdiff == "diffonly" then
 		cmd_compose_func = patchdiff_diffonly_compose
