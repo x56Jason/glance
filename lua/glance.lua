@@ -14,6 +14,15 @@ local function do_glance_log(cmdline, pr)
 	logview:open()
 end
 
+function M.comparelist_find_commit(commit)
+	for _,c in ipairs(M.comparelist) do
+		if commit.message:find(c.message) or c.message:find(commit.message) then
+			return c
+		end
+	end
+	return nil
+end
+
 function M.comparelist_add_commit(commit)
 	table.insert(M.comparelist, commit)
 end

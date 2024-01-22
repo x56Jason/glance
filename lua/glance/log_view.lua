@@ -138,6 +138,10 @@ function M:open_parallel_views(commit)
 	local upstream_commit_id = CommitView.get_upstream_commit(commit)
 
 	if upstream_commit_id == nil then
+		upstream_commit_id = glance.comparelist_find_commit(commit)
+	end
+
+	if upstream_commit_id == nil then
 		vim.notify("Not a backport commit", vim.log.levels.ERROR, {})
 		return
 	end
@@ -414,7 +418,7 @@ function M:create_buffer()
 						return
 					end
 					local index = line - commit_start_line + 1
-					local commit = commits[index].hash
+					local commit = commits[index]
 					glance.comparelist_add_commit(commit)
 					self:update_one_commit(line)
 				end,
