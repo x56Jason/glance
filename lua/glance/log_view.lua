@@ -107,6 +107,7 @@ function M.new(cmdline, pr)
 		comment_start_line = comment_start_line,
 		text = {},
 		buffer = nil,
+		select_start = nil,
 	}
 
 	setmetatable(instance, { __index = M })
@@ -373,7 +374,7 @@ function M:get_cursor_comment(line)
 	return nil
 end
 
-function M:update_one_commit(line)
+function M:update_one_commit(line, select)
 	local commits = self.commits
 	local commit_start_line = self.commit_start_line
 	local index = line - commit_start_line + 1
@@ -393,7 +394,11 @@ function M:update_one_commit(line)
 
 	local from = 0
 	local to = 12 -- length of abrev commit_id
-	self.buffer:add_highlight(line-1, from, to, "GlanceLogCompareList")
+	local hl_name = "GlanceLogCompareList"
+	if select then
+		hl_name = "GlanceLogSelect"
+	end
+	self.buffer:add_highlight(line-1, from, to, hl_name)
 	from = to + 1
 	if commit.remote ~= "" then
 		to = from + #commit.remote + 2
@@ -415,6 +420,33 @@ function M:create_buffer()
 		bufhidden = "hide",
 		mappings = {
 			n = {
+				["<c-s>"] = function()
+					local line = vim.fn.line '.'
+					if line < commit_start_line or line >= commit_start_line + commit_count then
+						vim.notify("Not a commit", vim.log.levels.WARN)
+						return
+					end
+					if self.select_start then
+						local start_commit
+						local end_commit
+						if self.select_start > line then
+							start_commit = line
+							end_commit = self.select_start
+						else
+							start_commit = self.select_start
+							end_commit = line
+						end
+						for i=start_commit,end_commit do
+							local commit = commits[i]
+							glance.comparelist_add_commit(commit)
+							self:update_one_commit(i)
+						end
+						self.select_start = nil
+					else
+						self.select_start = line
+						self:update_one_commit(line, true)
+					end
+				end,
 				["<c-a>"] = function()
 					local line = vim.fn.line '.'
 					if line < commit_start_line or line >= commit_start_line + commit_count then
