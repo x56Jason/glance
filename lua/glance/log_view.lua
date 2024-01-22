@@ -227,12 +227,12 @@ function M:post_pr_comment(message)
 	end
 	vim.notify("url: " .. opts.url, vim.log.levels.INFO, {})
 	local response = curl["post"](opts)
-	if response.exit ~= 0 or response.status ~= 201 then
+	vim.notify("response: exit: " .. response.exit .. ", status: " .. response.status, vim.log.levels.INFO, {})
+	if response.exit ~= 0 then
 		vim.notify("response: " .. response.body, vim.log.levels.INFO, {})
 		return nil
 	end
 	local comment = vim.fn.json_decode(response.body)
-	vim.notify("new comment: \n" .. comment.body, vim.log.levels.INFO, {})
 	return comment
 end
 
