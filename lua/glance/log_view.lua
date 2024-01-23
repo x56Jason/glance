@@ -388,7 +388,6 @@ function M:update_one_commit(line, select)
 	else
 		output = string.sub(commit.hash, 1, 12) .. " (" .. commit.remote .. ") " .. commit.message
 	end
-	vim.notify("update_one_commit: ".. commit.hash, vim.log.levels.INFO, {})
 	self.buffer:unlock()
 	self.buffer:set_lines(line-1, line, false, {output})
 
