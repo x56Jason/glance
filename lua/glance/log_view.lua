@@ -517,6 +517,7 @@ function M:create_buffer()
 					if answer ~= 1 then
 						return
 					end
+					vim.cmd("redraw")
 					self:delete_pr_comment(comment)
 				end,
 				["q"] = function()
