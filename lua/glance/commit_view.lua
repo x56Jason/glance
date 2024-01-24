@@ -59,7 +59,7 @@ local function parse_diff(output)
 	local kind = "modified"
 
 	if #header == 4 then
-		file = header[3]:match("%-%-%- a/(.*)")
+		file = header[1]:match("diff %-%-git a/%S+ b/(%S+)")
 	elseif #header == 2 then
 		file = header[2]:match("%+%+%+ /tmp/(.+).patch")
 	else
