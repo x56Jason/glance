@@ -113,8 +113,8 @@ function M:open_buffer()
 	buffer:set_option("modifiable", false)
 	buffer:set_option("readonly", true)
 
-	M.buffer = buffer
-	M.highlights = highlights
+	self.buffer = buffer
+	self.highlights = highlights
 
 	vim.cmd("hi CursorLine cterm=NONE ctermbg=darkred ctermfg=white guibg=darkred guifg=white")
 	--vim.cmd("hi CursorLine cterm=NONE ctermbg=#dc322f ctermfg=white guibg=#dc322f guifg=white")
