@@ -88,7 +88,7 @@ local function prepare_one_pr(output, highlights, pr)
 		["newcomer"] = "GlancePRListNewComer",
 	}
 
-	local label_start = 108
+	local label_start = 100
 	local entry_width = vim.fn.strdisplaywidth(entry)
 	if label_start > entry_width then
 		local space_str = repeat_space(label_start - entry_width)
