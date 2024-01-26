@@ -173,6 +173,38 @@ local function prepare_one_pr(output, highlights, pr)
 	output:append(entry)
 end
 
+function M.fuzzy_filter()
+	local bufnr = vim.api.nvim_get_current_buf()
+	local prlist_view = glance.get_state(bufnr)
+
+	local opts = { previewer = false }
+	opts.attach_mappings = function(_, map)
+		local actions = require("telescope.actions")
+		map({"i", "n"}, "<c-a>", function(prompt_bufnr)
+			actions.select_all(prompt_bufnr)
+		end)
+		map({"i", "n"}, "<c-g>", function(prompt_bufnr)
+			local action_state = require "telescope.actions.state"
+			local picker = action_state.get_current_picker(prompt_bufnr)
+			local new_prlist = {}
+			for _, entry in ipairs(picker:get_multi_selection()) do
+				local pr = prlist_view.prlist[entry.lnum]
+				table.insert(new_prlist, pr)
+			end
+			actions.close(prompt_bufnr)
+			prlist_view.buffer:close()
+			prlist_view = nil
+			prlist_view = require("glance.prlist_view").new(new_prlist)
+			prlist_view:open()
+		end)
+		map({"i", "n"}, "<cr>", function(prompt_bufnr)
+			actions.close(prompt_bufnr)
+		end)
+		return true
+	end
+	require("telescope.builtin").current_buffer_fuzzy_find(opts)
+end
+
 function M:open_buffer()
 	local buffer = self.buffer
 	if buffer == nil then
@@ -199,6 +231,13 @@ function M:open_buffer()
 	self.highlights = highlights
 
 	vim.cmd("setlocal cursorline")
+
+	local bufnr = vim.api.nvim_get_current_buf()
+	glance.set_state(bufnr, self)
+
+	vim.api.nvim_buf_set_keymap(0, "n", "<c-g>",
+		"<cmd>lua require('glance.prlist_view').fuzzy_filter()<CR>",
+		{noremap = true, silent = true})
 
 	vim.api.nvim_create_autocmd({"ColorScheme"}, {
 		pattern = { "*" },
