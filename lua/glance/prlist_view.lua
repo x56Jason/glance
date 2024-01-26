@@ -66,17 +66,17 @@ function M:create_buffer()
 	self.buffer = buffer
 end
 
-local function prepare_one_pr(output, highlights, pr)
-	local title = pr.title:match("%s*(.+)")
-	local entry = string.format("%04d", pr.number) .. " " .. title
+local function find_pr_label(labels, label_names)
+	for _, label in pairs(labels) do
+		for _, label_name in ipairs(label_names) do
+			if label.name == label_name then
+				return label
+			end
+		end
+	end
+end
 
-	local from = 0
-	local to = 4
-	add_highlight(highlights, #output + 1, from, to, "GlancePRListCommit")
-	from = to + 1
-	to = from + vim.fn.strlen(title)
-	add_highlight(highlights, #output + 1, from, to, "GlancePRListSubject")
-
+local function label_add_highlight(label, entry, highlights, line)
 	local label_hl_name = {
 		["openeuler-cla/yes"] = "GlancePRListCLAYes",
 		["openeuler-cla/no"] = "GlancePRListCLANo",
@@ -87,6 +87,37 @@ local function prepare_one_pr(output, highlights, pr)
 		["stat/needs-squash"] = "GlancePRListNeedSquash",
 		["newcomer"] = "GlancePRListNewComer",
 	}
+
+	local label_name = {
+		["openeuler-cla/yes"] = "cla/yes",
+		["openeuler-cla/no"] = "cla/no ",
+		["lgtm"] = "lgtm",
+		["ci_successful"] = "ci_ok    ",
+		["ci_failed"] = "ci_failed",
+		["stat/needs-squash"] = "squash",
+		["newcomer"] = "newcomer",
+	}
+	local name = label_name[label.name]
+	local to = #entry
+	entry = entry .. " | " .. name
+	local from = to + 3
+	to = from + #name
+	if label_hl_name[label.name] then
+		add_highlight(highlights, line, from, to, label_hl_name[label.name])
+	end
+	return entry
+end
+
+local function prepare_one_pr(output, highlights, pr)
+	local title = pr.title:match("%s*(.+)")
+	local entry = string.format("%04d", pr.number) .. " " .. title
+
+	local from = 0
+	local to = 4
+	add_highlight(highlights, #output + 1, from, to, "GlancePRListCommit")
+	from = to + 1
+	to = from + vim.fn.strlen(title)
+	add_highlight(highlights, #output + 1, from, to, "GlancePRListSubject")
 
 	local label_start = 100
 	local entry_width = vim.fn.strdisplaywidth(entry)
@@ -103,15 +134,35 @@ local function prepare_one_pr(output, highlights, pr)
 	end
 	entry = entry .. ref_str
 
-	to = #entry
-	for _, label in pairs(pr.labels) do
-		local label_str = label.name
-		entry = entry .. " | " .. label_str
-		from = to + 3
-		to = from + #label_str
-		if label_hl_name[label_str] then
-			add_highlight(highlights, #output + 1, from, to, label_hl_name[label_str])
-		end
+	local label = find_pr_label(pr.labels, {"openeuler-cla/yes", "openeuler-cla/no"})
+	entry = label_add_highlight(label, entry, highlights, #output+1)
+
+	label = find_pr_label(pr.labels, {"ci_successful", "ci_failed"})
+	if label then
+		entry = label_add_highlight(label, entry, highlights, #output+1)
+	else
+		entry = entry .. " |          "
+	end
+
+	label = find_pr_label(pr.labels, {"lgtm"})
+	if label then
+		entry = label_add_highlight(label, entry, highlights, #output+1)
+	else
+		entry = entry .. " |     "
+	end
+
+	label = find_pr_label(pr.labels, {"stat/needs-squash"})
+	if label then
+		entry = label_add_highlight(label, entry, highlights, #output+1)
+	else
+		entry = entry .. " |       "
+	end
+
+	label = find_pr_label(pr.labels, {"newcomer"})
+	if label then
+		entry = label_add_highlight(label, entry, highlights, #output+1)
+	else
+		entry = entry .. " |         "
 	end
 
 	pr.text = entry
