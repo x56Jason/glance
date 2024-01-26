@@ -2,12 +2,21 @@ local curl = require('plenary.curl')
 
 local M = {
 	comparelist = {},
+	state = {}
 }
 
 M.config = {
 	patchdiff = "diffonly",
 	q_quit_log = "off",
 }
+
+function M.set_state(bufnr, state)
+	M.state[bufnr] = state
+end
+
+function M.get_state(bufnr)
+	return M.state[bufnr]
+end
 
 local function do_glance_log(cmdline, pr)
 	local logview = require("glance.log_view").new(cmdline, pr)
