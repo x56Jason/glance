@@ -306,6 +306,7 @@ function M:do_pr_comment(file, file_pos)
 end
 
 local function put_one_comment(output, signs, comment, level)
+	comment.created_at = comment.created_at:gsub("T", " ")
 	local comment_head = string.format("%d | %s | %s | %s", comment.id, comment.user.login, comment.user.name, comment.created_at)
 	local level_space = space_with_level(level)
 
@@ -588,6 +589,9 @@ function M:put_pr_headers(output, highlights, signs)
 	end
 
 	output:append("---")
+
+	self.head.created_at = self.head.created_at:gsub("T", " ")
+	self.head.updated_at = self.head.updated_at:gsub("T", " ")
 
 	output:append("URL:      " .. self.head.url)
 	add_sign(signs, #output, "GlanceLogHeaderField")
