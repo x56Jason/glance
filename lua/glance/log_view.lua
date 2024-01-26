@@ -664,6 +664,8 @@ function M:open_buffer()
 	buffer:set_option("modifiable", false)
 	buffer:set_option("readonly", true)
 
+	vim.cmd("setlocal cursorline")
+
 	M.buffer = buffer
 	M.highlights = highlights
 	vim.api.nvim_create_autocmd({"ColorScheme"}, {
