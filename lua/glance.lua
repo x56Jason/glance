@@ -102,8 +102,12 @@ function M.get_pr_comments(pr_number)
 	for _, comment in ipairs(comments) do
 		if comment.in_reply_to_id then
 			local parent = find_comment_by_id(comments, comment.in_reply_to_id)
-			parent.children = parent.children or {}
-			table.insert(parent.children, comment)
+			if parent then
+				parent.children = parent.children or {}
+				table.insert(parent.children, comment)
+			else
+				comment.in_reply_to_id = nil
+			end
 		end
 	end
 	return comments
