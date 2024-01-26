@@ -135,7 +135,11 @@ local function prepare_one_pr(output, highlights, pr)
 	entry = entry .. ref_str
 
 	local label = find_pr_label(pr.labels, {"openeuler-cla/yes", "openeuler-cla/no"})
-	entry = label_add_highlight(label, entry, highlights, #output+1)
+	if label then
+		entry = label_add_highlight(label, entry, highlights, #output+1)
+	else
+		entry = entry .. " |        "
+	end
 
 	label = find_pr_label(pr.labels, {"ci_successful", "ci_failed"})
 	if label then
