@@ -196,10 +196,8 @@ function M.fuzzy_filter()
 				table.insert(new_prlist, pr)
 			end
 			actions.close(prompt_bufnr)
-			prlist_view.buffer:close()
-			prlist_view = nil
-			prlist_view = require("glance.prlist_view").new(new_prlist)
-			prlist_view:open()
+			local new_view = require("glance.prlist_view").new(new_prlist)
+			new_view:open()
 		end)
 		map({"i", "n"}, "<cr>", function(prompt_bufnr)
 			actions.close(prompt_bufnr)
