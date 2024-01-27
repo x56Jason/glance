@@ -114,6 +114,9 @@ end
 
 local function prepare_one_pr(output, highlights, pr)
 	local title = pr.title:match("%s*(.+)")
+	if #title > 94 then
+		title = title:sub(1, 94)
+	end
 	local entry = string.format("%04d", pr.number) .. " " .. title
 
 	local from = 0
