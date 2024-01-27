@@ -518,7 +518,11 @@ function M:create_buffer()
 						return
 					end
 					vim.cmd("redraw")
-					self:delete_pr_comment(comment)
+					vim.print("Deleting comment " .. comment.id .. " ...")
+					vim.schedule(function()
+						self:delete_pr_comment(comment)
+						vim.print("Delete done")
+					end)
 				end,
 				["q"] = function()
 					self:close()
