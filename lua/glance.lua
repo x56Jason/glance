@@ -207,6 +207,9 @@ local function do_glance_prlist(cmdline)
 		opts.url = base_url .. "?access_token=" .. token .. "&state=open&sort=created&direction=desc&page="..count.."&per_page=100"
 		local response = curl["get"](opts)
 		local tmp = vim.fn.json_decode(response.body)
+		if #tmp == 0 then
+			break
+		end
 		table_concat(json, tmp)
 	end
 
