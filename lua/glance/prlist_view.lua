@@ -23,9 +23,10 @@ local function add_highlight(highlights, line, from, to, name)
 	})
 end
 
-function M.new(prlist)
+function M.new(prlist, cmdline)
 	local instance = {
 		name = "GlancePRList-" .. M.index,
+		cmdline = cmdline,
 		prlist = prlist,
 		buffer = nil,
 	}
@@ -37,10 +38,13 @@ function M.new(prlist)
 end
 
 function M:close()
+	glance.set_state(self.buffer.handle, nil)
 	if self.buffer == nil then
 		return
 	end
 	self.buffer:close()
+	self.name = nil
+	self.prlist = nil
 	self.buffer = nil
 end
 
@@ -56,6 +60,16 @@ function M:create_buffer()
 					local line = vim.fn.line '.'
 					local pr = prlist[line].number
 					glance.do_glance_pr(pr)
+				end,
+				["<F5>"] = function()
+					local cmdline = self.cmdline
+					self:close()
+					vim.cmd("redraw")
+					vim.print("Refreshing pull request list...")
+					vim.schedule(function()
+						glance.do_glance_prlist(cmdline)
+						vim.print("Refresh done")
+					end)
 				end,
 			}
 		},

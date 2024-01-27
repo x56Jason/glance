@@ -187,7 +187,7 @@ local function table_concat(t1,t2)
     return t1
 end
 
-local function do_glance_prlist(cmdline)
+function M.do_glance_prlist(cmdline)
 	local howmany = "100"
 	if cmdline ~= "" then
 		howmany = cmdline
@@ -217,7 +217,7 @@ local function do_glance_prlist(cmdline)
 		table_concat(json, tmp)
 	end
 
-	local prlist_view = require("glance.prlist_view").new(json)
+	local prlist_view = require("glance.prlist_view").new(json, cmdline)
 	prlist_view:open()
 end
 
@@ -245,7 +245,7 @@ local function do_glance_command(user_opts)
 	elseif sub_cmd_str == "q_quit_log" then
 		sub_cmd = do_glance_q_quit_log
 	elseif sub_cmd_str == "prlist" then
-		sub_cmd = do_glance_prlist
+		sub_cmd = M.do_glance_prlist
 	elseif sub_cmd_str == "pr" then
 		sub_cmd = M.do_glance_pr
 	elseif sub_cmd_str == "gitee" then
