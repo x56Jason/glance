@@ -165,12 +165,16 @@ function M.do_glance_pr(cmdline)
 		base_branch = json.base.ref,
 		base_sha = json.base.sha,
 	}
-	vim.cmd(string.format("!git remote add %s %s", pr.user, pr.url))
-	vim.cmd(string.format("!git remote add %s %s", pr.base_user, pr.base_url))
-	vim.cmd(string.format("!git fetch %s %s", pr.user, pr.branch))
-	vim.cmd(string.format("!git fetch %s %s", pr.base_user, pr.base_branch))
+	local source_remote_name = json.head.user.login .. "-" .. json.head.repo.full_name:gsub('/', '-')
+	local dest_remote_name = json.base.user.login .. "-" .. json.base.repo.full_name:gsub('/', '-')
+	vim.cmd(string.format("!git remote remove %s", source_remote_name))
+	vim.cmd(string.format("!git remote add %s %s", source_remote_name, json.head.repo.html_url))
+	vim.cmd(string.format("!git remote remove %s", dest_remote_name))
+	vim.cmd(string.format("!git remote add %s %s", dest_remote_name, json.base.repo.html_url))
+	vim.cmd(string.format("!git fetch %s %s", source_remote_name, json.head.ref))
+	vim.cmd(string.format("!git fetch %s %s", dest_remote_name, json.base.ref))
 
-	local commit_from = vim.fn.systemlist(string.format("git merge-base %s %s", pr.sha, pr.base_sha))[1]
+	local commit_from = vim.fn.systemlist(string.format("git merge-base %s %s", json.head.sha, json.base.sha))[1]
 	pr.merge_base = commit_from
 
 	do_glance_log("", pr)
