@@ -169,12 +169,13 @@ local function prepare_one_pr(output, highlights, pr)
 		entry = entry .. " |       "
 	end
 
+	-- no alignment since here
+
 	label = find_pr_label(pr.labels, {"newcomer"})
 	if label then
 		entry = label_add_highlight(label, entry, highlights, #output+1)
-	else
-		entry = entry .. " |         "
 	end
+
 	entry = entry .. " | " .. pr.head.repo.full_name .. ":" .. pr.head.ref .. " -> " .. pr.base.repo.full_name .. ":" .. pr.base.ref
 
 	pr.text = entry
