@@ -2,7 +2,9 @@ local glance = require("glance")
 local Buffer = require("glance.buffer")
 local LineBuffer = require('glance.line_buffer')
 
-local M = {}
+local M = {
+	index = 0
+}
 
 local function repeat_space(n)
 	local str = ""
@@ -23,9 +25,11 @@ end
 
 function M.new(prlist)
 	local instance = {
+		name = "GlancePRList-" .. M.index,
 		prlist = prlist,
 		buffer = nil,
 	}
+	M.index = M.index + 1
 
 	setmetatable(instance, { __index = M })
 
@@ -43,7 +47,7 @@ end
 function M:create_buffer()
 	local prlist = self.prlist
 	local config = {
-		name = "GlancePRList",
+		name = self.name,
 		filetype = "GlancePRList",
 		bufhidden = "hide",
 		mappings = {
