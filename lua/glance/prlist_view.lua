@@ -216,7 +216,6 @@ function M.fuzzy_filter()
 				return
 			end
 			local pr = prlist_view.prlist[entry.lnum]
-			vim.cmd("redraw")
 			glance.do_glance_pr(pr.number)
 		end)
 		return true
