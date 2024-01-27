@@ -196,6 +196,10 @@ function M.fuzzy_filter()
 				table.insert(new_prlist, pr)
 			end
 			actions.close(prompt_bufnr)
+			if #new_prlist == 0 then
+				vim.notify("No entry selected", vim.log.levels.INFO, {})
+				return
+			end
 			local new_view = require("glance.prlist_view").new(new_prlist)
 			new_view:open()
 		end)
