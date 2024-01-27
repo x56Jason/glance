@@ -189,11 +189,11 @@ function M.fuzzy_filter()
 	local opts = { previewer = false }
 	opts.attach_mappings = function(_, map)
 		local actions = require("telescope.actions")
+		local action_state = require "telescope.actions.state"
 		map({"i", "n"}, "<c-a>", function(prompt_bufnr)
 			actions.select_all(prompt_bufnr)
 		end)
 		map({"i", "n"}, "<c-g>", function(prompt_bufnr)
-			local action_state = require "telescope.actions.state"
 			local picker = action_state.get_current_picker(prompt_bufnr)
 			local new_prlist = {}
 			for _, entry in ipairs(picker:get_multi_selection()) do
@@ -210,6 +210,14 @@ function M.fuzzy_filter()
 		end)
 		map({"i", "n"}, "<cr>", function(prompt_bufnr)
 			actions.close(prompt_bufnr)
+			local entry = action_state.get_selected_entry()
+			if not entry then
+				vim.notify("No entry selected", vim.log.levels.INFO, {})
+				return
+			end
+			local pr = prlist_view.prlist[entry.lnum]
+			vim.cmd("redraw")
+			glance.do_glance_pr(pr.number)
 		end)
 		return true
 	end
