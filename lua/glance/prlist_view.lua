@@ -176,14 +176,12 @@ local function prepare_one_pr(output, highlights, pr)
 		entry = entry .. " |     "
 	end
 
+	-- no alignment since here
+
 	label = find_pr_label(pr.labels, {"stat/needs-squash"})
 	if label then
 		entry = label_add_highlight(label, entry, highlights, #output+1)
-	else
-		entry = entry .. " |       "
 	end
-
-	-- no alignment since here
 
 	label = find_pr_label(pr.labels, {"newcomer"})
 	if label then
