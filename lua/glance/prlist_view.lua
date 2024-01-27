@@ -172,6 +172,7 @@ local function prepare_one_pr(output, highlights, pr)
 	else
 		entry = entry .. " |         "
 	end
+	entry = entry .. " | " .. pr.head.repo.full_name .. ":" .. pr.head.ref .. " -> " .. pr.base.repo.full_name .. ":" .. pr.base.ref
 
 	pr.text = entry
 	output:append(entry)
