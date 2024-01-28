@@ -103,6 +103,7 @@ local function label_add_highlight(label, entry, highlights, line)
 		["ci_failed"] = "GlancePRListCIFail",
 		["sig/Kernel"] = "GlancePRListSigKernel",
 		["stat/needs-squash"] = "GlancePRListNeedSquash",
+		["Acked"] = "GlancePRListAcked",
 		["newcomer"] = "GlancePRListNewComer",
 	}
 
@@ -113,6 +114,7 @@ local function label_add_highlight(label, entry, highlights, line)
 		["ci_successful"] = "ci_ok    ",
 		["ci_failed"] = "ci_failed",
 		["stat/needs-squash"] = "squash",
+		["Acked"] = "Acked",
 		["newcomer"] = "newcomer",
 	}
 	local name = label_name[label.name]
@@ -177,6 +179,11 @@ local function prepare_one_pr(output, highlights, pr)
 	end
 
 	-- no alignment since here
+
+	label = find_pr_label(pr.labels, {"Acked"})
+	if label then
+		entry = label_add_highlight(label, entry, highlights, #output+1)
+	end
 
 	label = find_pr_label(pr.labels, {"stat/needs-squash"})
 	if label then

@@ -600,6 +600,7 @@ function M:put_pr_headers(output, highlights, signs)
 		["ci_successful"] = "GlanceLogCISuccess",
 		["sig/Kernel"] = "GlanceLogSigKernel",
 		["stat/needs-squash"] = "GlanceLogNeedSquash",
+		["Acked"] = "GlanceLogAcked",
 		["newcomer"] = "GlanceLogNewComer",
 	}
 	local head = "Pull-Request !" .. self.pr_number .. "        "

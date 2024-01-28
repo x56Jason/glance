@@ -18,6 +18,7 @@ hi def GlanceLogLGTM guifg=#20c22e
 hi def GlanceLogCISuccess guifg=#20c22e
 hi def GlanceLogSigKernel guifg=#1dcaf9
 hi def GlanceLogNeedSquash guifg=#febc08
+hi def GlanceLogAcked guifg=#1dcaf9
 hi def GlanceLogNewComer guifg=#1083d6
 hi def GlanceLogCommentHead guifg=#94bbd1
 hi def GlanceLogCompareList guifg=#20c22c

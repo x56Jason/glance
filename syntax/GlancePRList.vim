@@ -14,6 +14,7 @@ hi def GlancePRListCISuccess guibg=NONE guifg=#20c22e
 hi def GlancePRListCIFail guibg=NONE guifg=#e82424
 hi def GlancePRListSigKernel guibg=NONE guifg=#1dcaf9
 hi def GlancePRListNeedSquash guibg=NONE guifg=#febc08
+hi def GlancePRListAcked guibg=NONE guifg=#1dcaf9
 hi def GlancePRListNewComer guibg=NONE guifg=#1083d6
 hi def GlancePRListCommentHead guibg=NONE guifg=#94bbd1
 hi def GlancePRListCompareList guibg=NONE guifg=#20c22c
