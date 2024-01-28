@@ -191,11 +191,14 @@ function M:open_patchdiff_view(commit)
 end
 
 function M:close()
-	if self.buffer == nil or glance.config.q_quit_log == "off" then
-		return
-	end
 	self.buffer:close()
 	self.buffer = nil
+	self.pr = nil
+	self.labels = nil
+	self.head = nil
+	self.body = nil
+	self.commits = nil
+	self.comments = nil
 end
 
 function M:delete_pr_comment(comment)
@@ -525,6 +528,9 @@ function M:create_buffer()
 					end)
 				end,
 				["q"] = function()
+					if glance.config.q_quit_log == "off" then
+						return
+					end
 					self:close()
 				end
 			}
