@@ -209,6 +209,23 @@ function M.fuzzy_filter()
 	opts.attach_mappings = function(_, map)
 		local actions = require("telescope.actions")
 		local action_state = require "telescope.actions.state"
+		local state = require "telescope.state"
+
+		map({"i", "n"}, "<c-l>", function(prompt_bufnr)
+			local status = state.get_status(prompt_bufnr)
+
+			vim.api.nvim_win_call(status.layout.results.winid, function()
+				vim.cmd([[normal! zL]])
+			end)
+		end)
+		map({"i", "n"}, "<c-h>", function(prompt_bufnr)
+			local status = state.get_status(prompt_bufnr)
+
+			vim.api.nvim_win_call(status.layout.results.winid, function()
+				vim.cmd([[normal! zH]])
+			end)
+		end)
+
 		map({"i", "n"}, "<c-a>", function(prompt_bufnr)
 			actions.select_all(prompt_bufnr)
 		end)
