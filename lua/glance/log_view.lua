@@ -107,7 +107,6 @@ function M.new(cmdline, pr)
 		comment_start_line = comment_start_line,
 		text = {},
 		buffer = nil,
-		select_start = nil,
 	}
 
 	setmetatable(instance, { __index = M })
@@ -414,6 +413,37 @@ function M:update_one_commit(line, select)
 	self.buffer:lock()
 end
 
+function M.comparelist_add_commit_range()
+	local bufnr = vim.api.nvim_get_current_buf()
+	local log_view = glance.get_state(bufnr)
+	local commits = log_view.commits
+	local commit_start_line = log_view.commit_start_line
+	local commit_count = get_table_size(log_view.commits)
+	local vstart = vim.fn.getpos('v')
+	local vend = vim.fn.getpos('.')
+	local start_row = vstart[2]
+	local end_row = vend[2]
+	if start_row > end_row then
+		start_row = end_row
+		end_row = vstart[2]
+	end
+	if start_row < commit_start_line then
+		start_row = commit_start_line
+	end
+	if end_row >= commit_start_line + commit_count then
+		end_row = commit_start_line + commit_count - 1
+	end
+	if end_row < start_row then
+		end_row = start_row
+	end
+
+	for i=start_row,end_row do
+		local commit = commits[i]
+		glance.comparelist_add_commit(commit)
+		log_view:update_one_commit(i)
+	end
+end
+
 function M:create_buffer()
 	local commits = self.commits
 	local commit_start_line = self.commit_start_line
@@ -425,33 +455,6 @@ function M:create_buffer()
 		mappings = {
 			n = {
 				["<c-s>"] = function()
-					local line = vim.fn.line '.'
-					if line < commit_start_line or line >= commit_start_line + commit_count then
-						vim.notify("Not a commit", vim.log.levels.WARN)
-						return
-					end
-					if self.select_start then
-						local start_commit
-						local end_commit
-						if self.select_start > line then
-							start_commit = line
-							end_commit = self.select_start
-						else
-							start_commit = self.select_start
-							end_commit = line
-						end
-						for i=start_commit,end_commit do
-							local commit = commits[i]
-							glance.comparelist_add_commit(commit)
-							self:update_one_commit(i)
-						end
-						self.select_start = nil
-					else
-						self.select_start = line
-						self:update_one_commit(line, true)
-					end
-				end,
-				["<c-a>"] = function()
 					local line = vim.fn.line '.'
 					if line < commit_start_line or line >= commit_start_line + commit_count then
 						vim.notify("Not a commit", vim.log.levels.WARN)
@@ -558,6 +561,10 @@ function M:create_buffer()
 	vim.cmd("wincmd o")
 
 	glance.set_state(buffer.handle, self)
+
+	vim.api.nvim_buf_set_keymap(0, "v", "<c-s>",
+		"<cmd>lua require('glance.log_view').comparelist_add_commit_range()<CR><Esc>",
+		{noremap = true, silent = true})
 
 	self.buffer = buffer
 end
