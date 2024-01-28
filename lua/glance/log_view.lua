@@ -191,6 +191,7 @@ function M:open_patchdiff_view(commit)
 end
 
 function M:close()
+	glance.set_state(self.buffer.handle, nil)
 	self.buffer:close()
 	self.buffer = nil
 	self.pr = nil
@@ -555,6 +556,8 @@ function M:create_buffer()
 		return
 	end
 	vim.cmd("wincmd o")
+
+	glance.set_state(buffer.handle, self)
 
 	self.buffer = buffer
 end
