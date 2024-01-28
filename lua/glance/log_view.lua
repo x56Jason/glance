@@ -527,6 +527,19 @@ function M:create_buffer()
 						vim.print("Delete done")
 					end)
 				end,
+				["<F5>"] = function()
+					if not self.pr_number then
+						vim.notify("not a pr", vim.log.levels.WARN, {})
+						return
+					end
+					local answer = vim.fn.confirm(string.format("Refresh pr %d?", self.pr_number), "&yes\n&no")
+					if answer ~= 1 then
+						return
+					end
+					self:close()
+					vim.cmd("redraw")
+					glance.do_glance_pr(self.pr_number)
+				end,
 				["q"] = function()
 					if glance.config.q_quit_log == "off" then
 						return
