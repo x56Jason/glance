@@ -207,7 +207,7 @@ local function table_concat(t1,t2)
     return t1
 end
 
-local function prlist_verify_param(key, value)
+local function prlist_verify_param(param_table, key, value)
 	local gitee_params = {
 		["state"] = { "open", "closed", "merged", "all" },
 		["sort"]  = { "created", "updated", "popularity", "long-running" },
@@ -217,13 +217,11 @@ local function prlist_verify_param(key, value)
 		if key == k then
 			for _, v in ipairs(p) do
 				if value == v then
-					return { [key] = value}
+					param_table[key] = value
 				end
 			end
 		end
 	end
-
-	return nil
 end
 
 function M.do_glance_prlist(cmdline)
@@ -239,10 +237,7 @@ function M.do_glance_prlist(cmdline)
 							howmany = key
 						end
 					else
-						local tbl = prlist_verify_param(key, value)
-						if tbl then
-							table.insert(param_table, tbl)
-						end
+						prlist_verify_param(param_table, key, value)
 					end
 				end
 			end
@@ -276,6 +271,7 @@ function M.do_glance_prlist(cmdline)
 	while count*100 < tonumber(howmany) do
 		count = count + 1
 		opts.url = base_url .. "?access_token=" .. token .. http_param_str .. "&direction=desc&page="..count.."&per_page=100"
+		vim.notify("url: " .. opts.url, vim.log.levels.INFO, {})
 		local response = curl["get"](opts)
 		local tmp = vim.fn.json_decode(response.body)
 		if #tmp == 0 then
@@ -337,12 +333,39 @@ local function do_glance_command(user_opts)
 	sub_cmd(cmdline)
 end
 
+local function do_gitee_command(user_opts)
+	local sub_cmd_str = user_opts.fargs[1]
+	local sub_cmd = nil
+	local cmdline = ""
+	local start_index = 2
+
+	if sub_cmd_str == "prlist" then
+		sub_cmd = M.do_glance_prlist
+	elseif sub_cmd_str == "pr" then
+		sub_cmd = M.do_glance_pr
+	else
+		sub_cmd = do_glance_gitee
+		start_index = 1
+	end
+
+	for i, arg in ipairs(user_opts.fargs) do
+		if i == start_index then
+			cmdline = arg
+		elseif i > start_index then
+			cmdline = cmdline .. " " .. arg
+		end
+	end
+
+	sub_cmd(cmdline)
+end
+
 function M.setup(opts)
 	local config = opts or {}
 
 	M.set_config(config)
 
 	vim.api.nvim_create_user_command( "Glance", do_glance_command, { desc = "Glance Commands", nargs = '+' })
+	vim.api.nvim_create_user_command( "Gitee", do_gitee_command, { desc = "Gitee Commands", nargs = '+' })
 end
 
 return M
