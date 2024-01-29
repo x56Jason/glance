@@ -195,7 +195,7 @@ local function prepare_one_pr(output, highlights, pr)
 		entry = label_add_highlight(label, entry, highlights, #output+1)
 	end
 
-	entry = entry .. " | " .. pr.head.repo.full_name .. ":" .. pr.head.ref .. " -> " .. pr.base.repo.full_name .. ":" .. pr.base.ref
+	entry = entry .. " | " .. pr.user.login .. " | " .. pr.user.name .. " | " .. pr.head.repo.full_name .. ":" .. pr.head.ref .. " -> " .. pr.base.repo.full_name .. ":" .. pr.base.ref
 
 	pr.text = entry
 	output:append(entry)
