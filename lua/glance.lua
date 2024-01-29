@@ -10,7 +10,7 @@ M.config = {
 	q_quit_log = "off",
 	gitee = {
 		prlist_state = "open",
-		prlist_sort = "created",
+		prlist_sort = "updated",
 	},
 }
 
