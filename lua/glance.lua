@@ -207,11 +207,57 @@ local function table_concat(t1,t2)
     return t1
 end
 
+local function prlist_verify_param(key, value)
+	local gitee_params = {
+		["state"] = { "open", "closed", "merged", "all" },
+		["sort"]  = { "created", "updated", "popularity", "long-running" },
+	}
+
+	for k, p in pairs(gitee_params) do
+		if key == k then
+			for _, v in ipairs(p) do
+				if value == v then
+					return { [key] = value}
+				end
+			end
+		end
+	end
+
+	return nil
+end
+
 function M.do_glance_prlist(cmdline)
 	local howmany = "100"
-	if cmdline ~= "" then
-		howmany = cmdline
+	local param_table = {}
+	if cmdline:match('%S+') then
+		for param in vim.gsplit(cmdline, " ", {plain=true}) do
+			if param:match('%S+') then
+				local key, value = unpack(vim.split(param, "=", {plain=true}))
+				if key:match('%S+') then
+					if not value or value:match('^%s*$') then
+						if tonumber(key) then
+							howmany = key
+						end
+					else
+						local tbl = prlist_verify_param(key, value)
+						if tbl then
+							table.insert(param_table, tbl)
+						end
+					end
+				end
+			end
+		end
 	end
+
+	local query_state = M.config.gitee.prlist_state
+	local query_sort = M.config.gitee.prlist_sort
+	if param_table["state"] then
+		query_state = param_table["state"]
+	end
+	if param_table["sort"] then
+		query_sort = param_table["sort"]
+	end
+
 	local base_url = "https://gitee.com/api/v5/repos/" .. M.config.gitee.repo .. "/pulls"
 	local token = M.config.gitee.token
 	local opts = {
@@ -224,7 +270,7 @@ function M.do_glance_prlist(cmdline)
 		},
 		body = {},
 	}
-	local http_param_str = "&state=" .. M.config.gitee.prlist_state .. "&sort=" .. M.config.gitee.prlist_sort
+	local http_param_str = "&state=" .. query_state .. "&sort=" .. query_sort
 	local json = {}
 	local count = 0
 	while count*100 < tonumber(howmany) do
