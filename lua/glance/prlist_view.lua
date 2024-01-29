@@ -23,10 +23,11 @@ local function add_highlight(highlights, line, from, to, name)
 	})
 end
 
-function M.new(prlist, cmdline)
+function M.new(prlist, cmdline, refreshable)
 	local instance = {
 		name = "GlancePRList-" .. M.index,
 		cmdline = cmdline,
+		refreshable = refreshable,
 		prlist = prlist,
 		buffer = nil,
 	}
@@ -62,6 +63,10 @@ function M:create_buffer()
 					glance.do_glance_pr(pr)
 				end,
 				["<F5>"] = function()
+					if not self.refreshable then
+						vim.print("Not a refreshable PRList")
+						return
+					end
 					local cmdline = self.cmdline
 					self:close()
 					vim.cmd("redraw")
@@ -242,7 +247,7 @@ function M.fuzzy_filter()
 				vim.notify("No entry selected", vim.log.levels.INFO, {})
 				return
 			end
-			local new_view = require("glance.prlist_view").new(new_prlist)
+			local new_view = require("glance.prlist_view").new(new_prlist, "", false)
 			new_view:open()
 		end)
 		map({"i", "n"}, "<cr>", function(prompt_bufnr)

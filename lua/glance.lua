@@ -217,7 +217,7 @@ function M.do_glance_prlist(cmdline)
 		table_concat(json, tmp)
 	end
 
-	local prlist_view = require("glance.prlist_view").new(json, cmdline)
+	local prlist_view = require("glance.prlist_view").new(json, cmdline, true)
 	prlist_view:open()
 end
 
