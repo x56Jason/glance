@@ -19,7 +19,6 @@ For Gitee usage, you need to generate a private token for Gitee API usage.
 You can omit the gitee part if you are not using for Gitee pull-request workflow.
 
 ```lua
-{ "nvim-lua/plenary.nvim" },
 {
     "x48Jason/glance",
     opts = {
@@ -70,6 +69,10 @@ In telescope window, you can use fzf filtering mechanisms to filter the pull-req
 - Press \<Tab\> to select a pull-request
 - Press \<c-a\> to select all pull-request
 - Press \<c-g\> to bring up a new PRList view for the selected pull-requests
+- Press \<c-z\> to further fuzzy-refine the filtering result
+- Press \<c-l\> to scroll-right the result window
+- Press \<c-h\> to scroll-left the result window
+- Press \<F5\> to refresh the pr list.
 - Press \<enter\> to bring up the PR logview.
 
 See following command for how to operate on a pull-request.
@@ -94,7 +97,10 @@ The following keys are available for showing patches in different ways.
 - Press \<enter\> on one commit will show the patch of this commit.
 - Press 'l' on one commit will show the upstream commit patch and the backport commit patch, if it is a backport commmit.
 - Press 'p' on one commit will show the diff between upstream commit patch and the backport commit patch, if it is a backport commit. Aka, diff of patch.
+- Press \<F5\> to refresh the pr log vie.
 - Press 'q' on the diff window will quit the diff window.
+
+In 'l' and 'p' command, glance will try to find the upstream commit id from the "commit xxxxxx" line in the commit message.
 
 ### Checkout Commit into Workspace
 
@@ -122,6 +128,16 @@ If you want to customize the commits that will be read-in, you can append any gi
 ```vim
 :Glance log v6.6..HEAD
 ```
+
+## CompareList
+
+Sometimes there is no "commit xxxxxxx" line in the commit message, but it does be backported from some commit on other branch.
+
+In order to compare, you can use 'Glance log' command to list commits on other branch, and:
+- Use \<ctrl-a\> to add a commit into the CompareList
+- Use visual mode selection, such as 'V' to select commit range, and then use \<ctrl-s\> to add these commits to CompareList in batch.
+
+After adding commits to CompareList, when use 'l' and 'p' commands in LogView, glance will try to find the commit in CompareList with the same title to do the diff.
 
 ## 'Glance patchdiff' Command
 
