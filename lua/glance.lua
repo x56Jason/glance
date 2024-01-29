@@ -8,6 +8,10 @@ local M = {
 M.config = {
 	patchdiff = "diffonly",
 	q_quit_log = "off",
+	gitee = {
+		prlist_state = "open",
+		prlist_sort = "created",
+	},
 }
 
 function M.set_state(bufnr, state)
@@ -62,6 +66,22 @@ function M.set_config(config)
 		end
 		if config.gitee.repo then
 			M.config.gitee.repo = config.gitee.repo
+		end
+		if config.gitee.prlist_state then
+			local state = config.gitee.prlist_state
+			if state ~= "open" and state ~= "merged" and state ~= "closed" and state ~= "all" then
+				vim.notify("incorrect config.gitee.prlist_state: " .. state, vim.log.levels.ERROR, {})
+				return
+			end
+			M.config.gitee.prlist_state = config.gitee.prlist_state
+		end
+		if config.gitee.prlist_sort then
+			local sort = config.gitee.prlist_sort
+			if sort ~= "created" and sort ~= "updated" and sort ~= "popularity" and sort ~= "long-running" then
+				vim.notify("incorrect config.gitee.prlist_sort: " .. sort, vim.log.levels.ERROR, {})
+				return
+			end
+			M.config.gitee.prlist_sort = config.gitee.prlist_sort
 		end
 	end
 end
@@ -204,11 +224,12 @@ function M.do_glance_prlist(cmdline)
 		},
 		body = {},
 	}
+	local http_param_str = "&state=" .. M.config.gitee.prlist_state .. "&sort=" .. M.config.gitee.prlist_sort
 	local json = {}
 	local count = 0
 	while count*100 < tonumber(howmany) do
 		count = count + 1
-		opts.url = base_url .. "?access_token=" .. token .. "&state=open&sort=created&direction=desc&page="..count.."&per_page=100"
+		opts.url = base_url .. "?access_token=" .. token .. http_param_str .. "&direction=desc&page="..count.."&per_page=100"
 		local response = curl["get"](opts)
 		local tmp = vim.fn.json_decode(response.body)
 		if #tmp == 0 then
@@ -230,6 +251,10 @@ local function do_glance_gitee(cmdline)
 		config.gitee.repo = gitee_cmd[2]
 	elseif gitee_cmd[1] == "token_file" then
 		config.gitee.token_file = gitee_cmd[2]
+	elseif gitee_cmd[1] == "prlist_state" then
+		config.gitee.prlist_state = gitee_cmd[2]
+	elseif gitee_cmd[1] == "prlist_sort" then
+		config.gitee.prlist_sort = gitee_cmd[2]
 	end
 	M.set_config(config)
 end
