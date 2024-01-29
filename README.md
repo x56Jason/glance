@@ -25,6 +25,8 @@ You can omit the gitee part if you are not using for Gitee pull-request workflow
         gitee = {
             token_file = "~/.token.gitee",
             repo = "openeuler/kernel",
+            prlist_state = "open",
+            prlist_sort = "updated",
         },
         patchdiff = "diffonly",
         q_quit_log = "off",
@@ -50,19 +52,35 @@ glance.setup(opts)
 
 # Usage
 
-## 'Glance prlist' Command
+## 'Gitee prlist' Command
 
 ```vim
-:Glance prlist [num]
+:Gitee prlist [state=<pr-state>] [sort=<sort-type>] [num]
 ```
 
-Retrieve [num] pull-requests from gitee.com. The pull-requests will be listed in a window.
+This command is to retrieve pull-request list from gitee. The pull-request list will be displayed in a new window (PRList view).
 
-Press \<enter\> on one pull-requests will fetch the details of this pull-requests from gitee.com and show it in a window.
+It can have following parameters:
 
-Press \<F5\> to refresh the pull-requests
+- [num]: denotes the number of pull-requests to be retrieved from gitee.com.
+- [state=\<pr-state\>]: what state the retrieved pull-requests should be in. It can be one of the following:
+    - open: the still open pull-request
+    - closed: the closed pull-requests
+    - merged: already merged pull-requests.
+    - all: all pull-requests
+- [sort=\<sort-type\>]: what sort strategy when retrieve pull-requests. It can be one of the following:
+    - created: sort by create time
+    - updated: sort by update time
+    - popularity: sort by popularity
+    - long-running: sort by long-running
 
-Press \<c-g\> to bring up telescope window to filter pull-requests.
+In PRList view, the following keymap is available:
+
+- Press \<enter\> on one pull-requests will fetch the details of this pull-requests from gitee.com and show it in a window.
+
+- Press \<F5\> to refresh the pull-requests
+
+- Press \<c-g\> to bring up telescope window to filter pull-requests.
 
 In telescope window, you can use fzf filtering mechanisms to filter the pull-requests. Meanwhile, following keys are available:
 
@@ -77,10 +95,10 @@ In telescope window, you can use fzf filtering mechanisms to filter the pull-req
 
 See following command for how to operate on a pull-request.
 
-## 'Glance pr' Command
+## 'Gitee pr' Command
 
 ```vim
-:Glance pr [pr-num]
+:Gitee pr [pr-num]
 ```
 
 Retrieve detailed information for a pull-request numbered [num] from gitee.com and show it in a window.
@@ -137,7 +155,7 @@ In order to compare, you can use 'Glance log' command to list commits on other b
 - Use \<ctrl-a\> to add a commit into the CompareList
 - Use visual mode selection, such as 'V' to select commit range, and then use \<ctrl-s\> to add these commits to CompareList in batch.
 
-After adding commits to CompareList, when use 'l' and 'p' commands in LogView, glance will try to find the commit in CompareList with the same title to do the diff.
+After adding commits to CompareList, when use 'l' and 'p' commands in LogView or Gitee PR Logview, glance will try to find the commit in CompareList with the same title to do the diff.
 
 ## 'Glance patchdiff' Command
 
