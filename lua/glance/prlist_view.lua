@@ -229,6 +229,7 @@ function M.fuzzy_filter()
 		map({"i", "n"}, "<c-a>", function(prompt_bufnr)
 			actions.select_all(prompt_bufnr)
 		end)
+		map({"i", "n"}, "<c-z>", actions.to_fuzzy_refine)
 		map({"i", "n"}, "<c-g>", function(prompt_bufnr)
 			local picker = action_state.get_current_picker(prompt_bufnr)
 			local new_prlist = {}
