@@ -501,6 +501,7 @@ local highlight_maps = {
 		hunkheader = "GlancePatchDiffHunkHeader",
 		filepath = "GlancePatchDiffFilePath",
 		viewheader = "GlancePatchDiffViewHeader",
+		headerfield = "GlancePatchDiffHeaderField",
 	},
 }
 
@@ -578,6 +579,13 @@ function M:initialize()
 			add_highlight(from, to, hl_map.diffdel) -- "GlanceDiffDelete"
 		end
 		output:append("")
+	elseif vim.bo.filetype == "GlancePatchDiff" and not self.parent_log then
+		output:append("PatchDiff " .. self.commit_id)
+		add_sign(hl_map.viewheader) -- 'GlanceCommitViewHeader'
+
+		output:append("Upstream: " .. self.upstream_commit_id)
+		add_sign(hl_map.headerfield)
+		output:append("")
 	end
 
 	for _, diff in ipairs(info.diffs) do
@@ -626,6 +634,10 @@ function M:initialize()
 			hunk.end_line = #output
 		end
 		diff.end_line = #output
+	end
+	if #info.diffs == 0 and vim.bo.filetype == "GlancePatchDiff" then
+		output:append("No Difference!")
+		add_sign(hl_map.hunkheader)
 	end
 	buffer:replace_content_with(output)
 
