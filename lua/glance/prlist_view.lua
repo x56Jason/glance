@@ -200,7 +200,15 @@ local function prepare_one_pr(output, highlights, pr)
 		entry = label_add_highlight(label, entry, highlights, #output+1)
 	end
 
-	entry = entry .. " | " .. pr.user.login .. " | " .. pr.user.name .. " | " .. pr.head.repo.full_name .. ":" .. pr.head.ref .. " -> " .. pr.base.repo.full_name .. ":" .. pr.base.ref
+	local head_repo_full_name = "<null>"
+	if type(pr.head.repo) == "table" then
+		head_repo_full_name = pr.head.repo.full_name
+	end
+	local base_repo_full_name = "<null>"
+	if type(pr.base.repo) == "table" then
+		base_repo_full_name = pr.base.repo.full_name
+	end
+	entry = entry .. " | " .. pr.user.login .. " | " .. pr.user.name .. " | " .. head_repo_full_name .. ":" .. pr.head.ref .. " -> " .. base_repo_full_name .. ":" .. pr.base.ref
 
 	pr.text = entry
 	output:append(entry)
