@@ -167,7 +167,8 @@ local function parse_commit_info(raw_info, diffonly)
 
 		local line = advance()
 		while line ~= "" and line ~= nil do
-			table.insert(info.description, vim.trim(line))
+			line = line:gsub("\r", "")
+			table.insert(info.description, line)
 			line = advance()
 		end
 	end
