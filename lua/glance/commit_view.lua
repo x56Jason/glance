@@ -384,10 +384,17 @@ function M:close()
 	self.is_open = false
 	self.buffer:close()
 	self.buffer = nil
-	if self.view_scrollbind then
-		self.view_scrollbind:close()
-	end
+
+	local buddy = self.view_scrollbind
 	self.view_scrollbind = nil
+
+	if buddy.buffer == nil then
+		return
+	end
+
+	if buddy.buffer.exists(buddy.name) then
+		buddy:close()
+	end
 end
 
 local function diff_get_newfile_pos(commit_info, line, strict)
