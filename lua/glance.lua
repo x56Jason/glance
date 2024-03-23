@@ -118,7 +118,7 @@ function M.get_pr_comments(pr_number)
 		body = {},
 	}
 	opts.url = base_url .. pr_number .."/comments?access_token=" .. token .. "&number=" .. pr_number .. "&page=1&per_page=100"
-	vim.notify("url: " .. opts.url, vim.log.levels.INFO, {})
+	-- vim.notify("url: " .. opts.url, vim.log.levels.INFO, {})
 	local response = curl["get"](opts)
 	local json = vim.fn.json_decode(response.body)
 	local comments = {}
@@ -157,7 +157,7 @@ function M.do_glance_pr(cmdline)
 		body = {},
 	}
 	opts.url = base_url .. pr_number .."?access_token=" .. token .. "&number=" .. pr_number
-	vim.notify("url: " .. opts.url, vim.log.levels.INFO, {})
+	-- vim.notify("url: " .. opts.url, vim.log.levels.INFO, {})
 	local response = curl["get"](opts)
 	local json = vim.fn.json_decode(response.body)
 	local desc_body = vim.fn.split(json.body, "\n")
@@ -271,7 +271,7 @@ function M.do_glance_prlist(cmdline)
 	while count*100 < tonumber(howmany) do
 		count = count + 1
 		opts.url = base_url .. "?access_token=" .. token .. http_param_str .. "&direction=desc&page="..count.."&per_page=100"
-		vim.notify("url: " .. opts.url, vim.log.levels.INFO, {})
+		-- vim.notify("url: " .. opts.url, vim.log.levels.INFO, {})
 		local response = curl["get"](opts)
 		local tmp = vim.fn.json_decode(response.body)
 		if #tmp == 0 then
