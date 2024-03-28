@@ -448,6 +448,26 @@ function M:create_buffer()
 	local commits = self.commits
 	local commit_start_line = self.commit_start_line
 	local commit_count = get_table_size(self.commits)
+	local function do_list_parallel()
+		local line = vim.fn.line '.'
+		if line >= commit_start_line and line < commit_start_line + commit_count then
+			line = line - commit_start_line + 1
+			local commit = commits[line]
+			self:open_parallel_views(commit)
+			return
+		end
+		vim.notify("Not a commit", vim.log.levels.WARN)
+	end
+	local function do_patchdiff()
+		local line = vim.fn.line '.'
+		if line >= commit_start_line and line < commit_start_line + commit_count then
+			line = line - commit_start_line + 1
+			local commit = commits[line]
+			self:open_patchdiff_view(commit)
+			return
+		end
+		vim.notify("Not a commit", vim.log.levels.WARN)
+	end
 	local config = {
 		name = self.name,
 		filetype = "GlanceLog",
@@ -478,26 +498,10 @@ function M:create_buffer()
 					end
 					vim.notify("Not a commit", vim.log.levels.WARN)
 				end,
-				["l"] = function()
-					local line = vim.fn.line '.'
-					if line >= commit_start_line and line < commit_start_line + commit_count then
-						line = line - commit_start_line + 1
-						local commit = commits[line]
-						self:open_parallel_views(commit)
-						return
-					end
-					vim.notify("Not a commit", vim.log.levels.WARN)
-				end,
-				["p"] = function()
-					local line = vim.fn.line '.'
-					if line >= commit_start_line and line < commit_start_line + commit_count then
-						line = line - commit_start_line + 1
-						local commit = commits[line]
-						self:open_patchdiff_view(commit)
-						return
-					end
-					vim.notify("Not a commit", vim.log.levels.WARN)
-				end,
+				["l"] = do_list_parallel,
+				["2"] = do_list_parallel,
+				["p"] = do_patchdiff,
+				["3"] = do_patchdiff,
 				["<c-r>"] = function()
 					if not self.pr_number then
 						vim.notify("not a pr", vim.log.levels.WARN, {})
