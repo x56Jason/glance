@@ -389,7 +389,7 @@ function M:close()
 	local buddy = self.view_scrollbind
 	self.view_scrollbind = nil
 
-	if buddy.buffer == nil then
+	if buddy == nil or buddy.buffer == nil then
 		return
 	end
 
