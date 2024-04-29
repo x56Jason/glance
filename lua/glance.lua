@@ -213,14 +213,19 @@ local function prlist_verify_param(param_table, key, value)
 		["sort"]  = { "created", "updated", "popularity", "long-running" },
 	}
 
+	local key_found = nil
 	for k, p in pairs(gitee_params) do
 		if key == k then
+			key_found = true
 			for _, v in ipairs(p) do
 				if value == v then
 					param_table[key] = value
 				end
 			end
 		end
+	end
+	if not key_found then
+		param_table[key] = value
 	end
 end
 
@@ -253,6 +258,24 @@ function M.do_glance_prlist(cmdline)
 		query_sort = param_table["sort"]
 	end
 
+	local http_param_str = "&state=" .. query_state .. "&sort=" .. query_sort
+
+	if param_table["base"] then
+		http_param_str = http_param_str .. "&base=" .. param_table["base"]
+	end
+	if param_table["milestone_number"] then
+		http_param_str = http_param_str .. "&milestone_number=" .. param_table["milestone_number"]
+	end
+	if param_table["labels"] then
+		http_param_str = http_param_str .. "&labels=" .. param_table["labels"]
+	end
+	if param_table["author"] then
+		http_param_str = http_param_str .. "&author=" .. param_table["author"]
+	end
+	if param_table["assignee"] then
+		http_param_str = http_param_str .. "&assignee=" .. param_table["assignee"]
+	end
+
 	local base_url = "https://gitee.com/api/v5/repos/" .. M.config.gitee.repo .. "/pulls"
 	local token = M.config.gitee.token
 	local opts = {
@@ -265,7 +288,6 @@ function M.do_glance_prlist(cmdline)
 		},
 		body = {},
 	}
-	local http_param_str = "&state=" .. query_state .. "&sort=" .. query_sort
 	local json = {}
 	local count = 0
 	while count*100 < tonumber(howmany) do
