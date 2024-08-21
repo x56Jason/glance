@@ -126,22 +126,10 @@ function Buffer:add_highlight(line, col_start, col_end, name, ns_id)
 
 	vim.api.nvim_buf_add_highlight(self.handle, ns_id, name, line, col_start, col_end)
 end
+
 function Buffer:place_sign(line, name, group, id)
-	-- Sign IDs should be unique within a group, however there's no downside as
-	-- long as we don't want to uniquely identify the placed sign later. Thus,
-	-- we leave the choice to the caller
 	local sign_id = id or 1
-
-	-- There's an equivalent function sign_place() which can automatically use
-	-- a free ID, but is considerable slower, so we use the command for now
-	local cmd = 'sign place '..sign_id..' line='..line..' name='..name
-	if group ~= nil then
-		cmd = cmd..' group='..group
-	end
-	cmd = cmd..' buffer='..self.handle
-
-	vim.cmd(cmd)
-	return sign_id
+	vim.api.nvim_buf_set_extmark(self.handle, sign_id, line - 1, 0, {end_row = line - 1, line_hl_group=name})
 end
 
 function Buffer:get_sign_at_line(line, group)
